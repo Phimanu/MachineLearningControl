@@ -27,6 +27,8 @@ def fix_component():
     #bool
     #[This will transition mRuBis to the next RUN]
 
+def load_model():
+    #
 
 def main():
     #
