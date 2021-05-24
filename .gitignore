@@ -2,3 +2,5 @@
 *.xml
 venv/
 .idea/
+bin/
+.vscode/

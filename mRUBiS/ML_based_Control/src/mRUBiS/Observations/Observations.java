@@ -15,61 +15,65 @@ import de.mdelab.morisia.selfhealing.ArchitectureUtilCal;
 import de.mdelab.morisia.selfhealing.EnvSetUp;
 import de.mdelab.sdm.interpreter.core.SDMException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class Observations {
-	
+
 	static Architecture mRubis;
-	
+
 	public static void main(String[] args) throws SDMException, IOException {
 		Observations.initializeMRubisInstance();
 		Observations.executionLoop();
 	}
-	
+
 	private static void initializeMRubisInstance() {
-		
+
 		if (mRubis == null) {
 			Resource architectureResource = EnvSetUp
-					
+
 					.loadFreshInstance("model/enriched/mRUBiS-1shop_enriched.comparch");
-																								
-																								
+
+
 
 			Architecture architecture = (Architecture) architectureResource.getContents().get(0);
-			
+
 			mRubis = architecture;
 		}
-		
+
 	}
-	
+
 	private static void executionLoop() {
 		// inject failures
 	}
-	
+
 	// TODO:
-	
+
 	// one static method per python method
-	
+
 	public static String getComponentsUtility(){
-		
-		
+
+
 		ArchitectureUtilCal.computeOverallUtility(mRubis);
-		
+		String json = "";
+
 		for (Tenant shop : mRubis.getTenants())
 		{ArchitectureUtilCal.computeShopUtility(shop);
-		
-			shop.getName();
-			shop.getCriticality();
-			shop.getPerformance();
-			shop.getRequest();
-		
-			HashMap<String, HashMap<String, HashMap<String, Double>>> shopMap = new HashMap<String, HashMap<String, HashMap<String, Double>>>();
-			HashMap<String, HashMap<String, Double>> componentMap = new HashMap<String, HashMap<String, Double>>();
-			shopMap.put(shop.getName(), componentMap);
-			
+
+		shop.getName();
+		shop.getCriticality();
+		shop.getPerformance();
+		shop.getRequest();
+
+		HashMap<String, HashMap<String, HashMap<String, Double>>> shopMap = new HashMap<String, HashMap<String, HashMap<String, Double>>>();
+		HashMap<String, HashMap<String, Double>> componentMap = new HashMap<String, HashMap<String, Double>>();
+		shopMap.put(shop.getName(), componentMap);
+
 		for ( Component component : shop.getComponents())
 		{    
-			
+
 			HashMap<String, Double> parameterMap = new HashMap<String, Double>();
-			
+
 			parameterMap.put("adt", component.getADT());
 			parameterMap.put("connectivity", new Double(component.getProvidedInterfaces().size() + component.getRequiredInterfaces().size()));
 			parameterMap.put("importance", component.getTenant().getImportance());
@@ -80,25 +84,64 @@ public class Observations {
 			parameterMap.put("replica", component.getInUseReplica());
 			parameterMap.put("perf_max", component.getType().getPerformanceMax());
 			parameterMap.put("component_utility", ArchitectureUtilCal.computeComponentUtility(component));
-			
+
 			componentMap.put(component.getUid() , parameterMap);
-			
+
+		}
+
+
+		// https://stackoverflow.com/questions/12155800/how-to-convert-hashmap-to-json-object-in-java
+		try {
+			json = new ObjectMapper().writeValueAsString(shopMap);
+			return json;
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+
+
 		}
 		
-		//Gson gson = new Gson(); 
-		//String json = gson.toJson(myObject);
-		
-		// https://stackoverflow.com/questions/12155800/how-to-convert-hashmap-to-json-object-in-java
-		String json = new ObjectMapper().writeValueAsString(shopMap);
-		
 		return json;
+
+/*
+		List<Issue> allIssues = new LinkedList<>();
+		allIssues.addAll(mRubis.getAnnotations().getIssues());
+		for (Issue issue : allIssues)
+		{issue.getAffectedComponent();
+		issue.getUtilityDrop();
+		issue.getHandledBy();
+		issue.getHandledBy().get(0).getCosts();}
+		*/
+
+	}
+	
+public static void makeObservation(Architecture mRUBiS){
 		
+		
+		ArchitectureUtilCal.computeOverallUtility(mRUBiS);
+		
+		for (Tenant shop : mRUBiS.getTenants())
+		{ArchitectureUtilCal.computeShopUtility(shop);
+		
+			shop.getName();
+			shop.getCriticality();
+			shop.getPerformance();
+			shop.getRequest();
+				
+		
+		for ( Component component : shop.getComponents())
+		{    ArchitectureUtilCal.computeComponentUtility(component);
+			component.getInUseReplica();
+			component.getIssues();
+			component.getType();
+			component.getCriticality();
+		}
 		
 		}
 		
 		
 		List<Issue> allIssues = new LinkedList<>();
-		allIssues.addAll(mRubis.getAnnotations().getIssues());
+		allIssues.addAll(mRUBiS.getAnnotations().getIssues());
 		for (Issue issue : allIssues)
 		{issue.getAffectedComponent();
 		issue.getUtilityDrop();
