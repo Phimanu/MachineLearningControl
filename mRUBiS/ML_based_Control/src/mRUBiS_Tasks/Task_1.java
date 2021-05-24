@@ -1,6 +1,7 @@
 package mRUBiS_Tasks;
 
 import java.io.FileWriter;
+import java.io.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -82,8 +83,23 @@ public class Task_1 {
 
 	
 	
-	public static void main(String[] args) throws SDMException, IOException {
-
+	public static void main(String[] args) throws SDMException, IOException, InterruptedException {
+		
+		try {
+			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
+			PrintWriter writer = new PrintWriter("result.txt", "UTF-8");
+			writer.println("Start");
+			String s;
+			while(((s = bufferRead.readLine()) != null) && (s.equals("x") == false)) {
+				writer.println(s);
+				String answer = String.format("The message was: %s", s);
+				System.out.println(answer);
+			}
+			writer.close();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		
 		boolean enableLogging = false;
 		configLogging(enableLogging);
 
@@ -615,6 +631,6 @@ public class Task_1 {
 		}
 		logger.removeHandler(toBeRemoved);
 	}
-
+	
 
 }
