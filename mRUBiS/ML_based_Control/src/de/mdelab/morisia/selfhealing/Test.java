@@ -16,7 +16,6 @@ import de.mdelab.morisia.comparch.simulator.ComparchSimulator;
 import de.mdelab.morisia.comparch.simulator.Injection;
 import de.mdelab.morisia.comparch.simulator.InjectionStrategy;
 import de.mdelab.morisia.comparch.simulator.IssueType;
-import de.mdelab.morisia.comparch.simulator.impl.TestInjectionStrategy;
 import de.mdelab.morisia.selfhealing.incremental.EventListener;
 import mRUBiS.Observations.Observations;
 

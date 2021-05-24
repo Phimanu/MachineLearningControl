@@ -41,7 +41,7 @@
   </nodes>
   <nodes xsi:type="mlsdm:ExpressionActivityNode" uuid="_QT5JkBdcEeauFrHocIOK3g" outgoingEdges="_Sv7HIBdcEeauFrHocIOK3g" incomingEdges="_pb7xwBdsEea44poxr6ukeQ" name="Add Replica">
     <expressions xsi:type="mlexpressions.mlcallactions:CallActionExpression" uuid="_TmEE8hdcEeauFrHocIOK3g">
-      <callActions xsi:type="mlexpressions.mlcallactions:ActivityCallAction" uuid="_T6OXGxdcEeauFrHocIOK3g">
+      <callActions xsi:type="mlsdm:ActivityCallAction" uuid="_T6OXGxdcEeauFrHocIOK3g">
         <parameters uuid="_Wprm8RdcEeauFrHocIOK3g" name="component">
           <type xsi:type="ecore:EClass" href="http://www.mdelab.de/morisia/comparch#//Component"/>
           <valueExpression xsi:type="mlexpressions:MLStringExpression" uuid="_YAzx8hdcEeauFrHocIOK3g" expressionString="component" expressionLanguageID="OCL"/>
@@ -70,7 +70,7 @@
   </nodes>
   <nodes xsi:type="mlsdm:ExpressionActivityNode" uuid="_2IR6wOWYEeewQ-UFt4SDKg" outgoingEdges="_2Elz8OWgEeewQ-UFt4SDKg" incomingEdges="_rywXwOWgEeewQ-UFt4SDKg" name="Remove Replica">
     <expressions xsi:type="mlexpressions.mlcallactions:CallActionExpression" uuid="_62puYOWYEeewQ-UFt4SDKg">
-      <callActions xsi:type="mlexpressions.mlcallactions:ActivityCallAction" uuid="_8TNzAOWYEeewQ-UFt4SDKg">
+      <callActions xsi:type="mlsdm:ActivityCallAction" uuid="_8TNzAOWYEeewQ-UFt4SDKg">
         <parameters uuid="_Z2yhcOWgEeewQ-UFt4SDKg" name="component">
           <type xsi:type="ecore:EClass" href="http://www.mdelab.de/morisia/comparch#//Component"/>
           <valueExpression xsi:type="mlexpressions:MLStringExpression" uuid="_ctm9kOWgEeewQ-UFt4SDKg" expressionString="component" expressionLanguageID="OCL"/>

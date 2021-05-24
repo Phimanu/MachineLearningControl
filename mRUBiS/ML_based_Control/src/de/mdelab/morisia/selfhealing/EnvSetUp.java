@@ -17,15 +17,15 @@ import de.mdelab.mlexpressions.mlcallactions.CallActionsExpressionLanguageConsta
 import de.mdelab.mlsdm.Activity;
 import de.mdelab.mlsdm.MlsdmPackage;
 import de.mdelab.mlsdm.interpreter.MLSDMInterpreter;
-import de.mdelab.mlsdm.interpreter.callActions.CallActionInterpreter;
-import de.mdelab.mlsdm.interpreter.expressions.MLSDMExpressionInterpreterManager;
+import de.mdelab.mlsdm.interpreter.MLSDMCallActionInterpreter;
+import de.mdelab.mlsdm.interpreter.MLSDMExpressionInterpreterManager;
 import de.mdelab.mlsdm.interpreter.facade.OptimizedMLSDMMetamodelFacadeFactory;
 import de.mdelab.mlsdm.interpreter.notifications.MLSDMOutputStreamNotificationReceiver;
 import de.mdelab.morisia.comparch.ComparchPackage;
 import de.mdelab.sdm.interpreter.core.SDMException;
 import de.mdelab.sdm.interpreter.core.executionTrace.ExecutionTracePackage;
-import de.mdelab.sdm.interpreter.ocl.OCLExpressionInterpreter;
-import de.mdelab.sdm.interpreter.ocl.OCLExpressionInterpreterConstants;
+import de.mdelab.expressions.interpreter.ocl.OCLExpressionInterpreter;
+import de.mdelab.expressions.interpreter.ocl.OCLExpressionInterpreterConstants;
 
 public class EnvSetUp {
 
@@ -148,10 +148,10 @@ public class EnvSetUp {
 				OCLExpressionInterpreterConstants.OCL_LANGUAGE_NAME, OCLExpressionInterpreterConstants.OCL_LANGUAGE_VERSION);
 
 		// EMF Delete Optimization
-		final CallActionInterpreter actionInterpreter;
+		final MLSDMCallActionInterpreter actionInterpreter;
 
 		if ( interpreter.getFacadeFactory() instanceof OptimizedMLSDMMetamodelFacadeFactory ) {
-			actionInterpreter = new CallActionInterpreter() {
+			actionInterpreter = new MLSDMCallActionInterpreter() {
 
 				@Override
 				protected MLSDMInterpreter createMLSDMInterpreter() {
@@ -160,7 +160,7 @@ public class EnvSetUp {
 			};
 		}
 		else {
-			actionInterpreter = new CallActionInterpreter();
+			actionInterpreter = new MLSDMCallActionInterpreter();
 		}
 
 		interpreter.getExpressionInterpreterManager().registerExpressionInterpreter( actionInterpreter,

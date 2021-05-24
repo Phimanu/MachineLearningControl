@@ -204,7 +204,7 @@
   </nodes>
   <nodes xsi:type="mlsdm:ExpressionActivityNode" uuid="_BmO_QBhBEeaas5O4vKYohg" outgoingEdges="_YwhW0BeMEeaHz7TAtoq-Ww" incomingEdges="_GKGgMBeKEea44poxr6ukeQ" name="Remove old component">
     <expressions xsi:type="mlexpressions.mlcallactions:CallActionExpression" uuid="_F6m-gBhBEeaas5O4vKYohg">
-      <callActions xsi:type="mlexpressions.mlcallactions:ActivityCallAction" uuid="_GRGy-xhBEeaas5O4vKYohg">
+      <callActions xsi:type="mlsdm:ActivityCallAction" uuid="_GRGy-xhBEeaas5O4vKYohg">
         <parameters uuid="_Iu8HURhBEeaas5O4vKYohg" name="component">
           <type xsi:type="ecore:EClass" href="http://www.mdelab.de/morisia/comparch#//Component"/>
           <valueExpression xsi:type="mlexpressions:MLStringExpression" uuid="_KczXUhhBEeaas5O4vKYohg" expressionString="component" expressionLanguageID="OCL"/>

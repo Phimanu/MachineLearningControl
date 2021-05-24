@@ -19,17 +19,17 @@ import de.mdelab.mlexpressions.MLExpression;
 import de.mdelab.mlexpressions.MlexpressionsPackage;
 import de.mdelab.mlsdm.Activity;
 import de.mdelab.mlsdm.MlsdmPackage;
+import de.mdelab.mlsdm.interpreter.MLSDMExpressionInterpreterManager;
 import de.mdelab.mlsdm.interpreter.MLSDMInterpreter;
-import de.mdelab.mlsdm.interpreter.callActions.CallActionInterpreter;
-import de.mdelab.mlsdm.interpreter.expressions.MLSDMExpressionInterpreterManager;
+import de.mdelab.mlsdm.interpreter.MLSDMCallActionInterpreter;
 import de.mdelab.mlsdm.interpreter.notifications.MLSDMOutputStreamNotificationReceiver;
 import de.mdelab.morisia.comparch.Annotations;
 import de.mdelab.morisia.comparch.Architecture;
 import de.mdelab.morisia.comparch.ComparchFactory;
 import de.mdelab.morisia.comparch.ComparchPackage;
 import de.mdelab.sdm.interpreter.core.SDMException;
-import de.mdelab.sdm.interpreter.core.variables.Variable;
-import de.mdelab.sdm.interpreter.ocl.OCLExpressionInterpreter;
+import de.mdelab.expressions.interpreter.core.variables.Variable;
+import de.mdelab.expressions.interpreter.ocl.OCLExpressionInterpreter;
 
 public class BatchTest {
 
@@ -67,7 +67,7 @@ public class BatchTest {
 						new OCLExpressionInterpreter<MLExpression>(), "OCL",
 						"1.0");
 		interpreter.getExpressionInterpreterManager()
-				.registerExpressionInterpreter(new CallActionInterpreter(),
+				.registerExpressionInterpreter(new MLSDMCallActionInterpreter(),
 						"CallActions", "1.0");
 
 		/*

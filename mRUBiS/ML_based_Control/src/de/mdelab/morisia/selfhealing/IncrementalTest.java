@@ -20,7 +20,7 @@ import de.mdelab.morisia.comparch.ProvidedInterface;
 import de.mdelab.morisia.comparch.Rule;
 import de.mdelab.morisia.comparch.Tenant;
 import de.mdelab.sdm.interpreter.core.SDMException;
-import de.mdelab.sdm.interpreter.core.variables.Variable;
+import de.mdelab.expressions.interpreter.core.variables.Variable;
 
 public class IncrementalTest {
 

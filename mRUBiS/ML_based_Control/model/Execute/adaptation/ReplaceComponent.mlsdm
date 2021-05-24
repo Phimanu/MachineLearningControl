@@ -51,7 +51,7 @@
   </nodes>
   <nodes xsi:type="mlsdm:ExpressionActivityNode" uuid="_xPORYBg8Eeaas5O4vKYohg" outgoingEdges="_szc3YBhBEeaas5O4vKYohg" incomingEdges="_1PgP8Bg8Eeaas5O4vKYohg" name="Heavy-weight redeploy the component">
     <expressions xsi:type="mlexpressions.mlcallactions:CallActionExpression" uuid="_9OffwRg8Eeaas5O4vKYohg">
-      <callActions xsi:type="mlexpressions.mlcallactions:ActivityCallAction" uuid="_9gGNIBg8Eeaas5O4vKYohg">
+      <callActions xsi:type="mlsdm:ActivityCallAction" uuid="_9gGNIBg8Eeaas5O4vKYohg">
         <parameters uuid="_AUaH0Rg9Eeaas5O4vKYohg" name="component">
           <type xsi:type="ecore:EClass" href="http://www.mdelab.de/morisia/comparch#//Component"/>
           <valueExpression xsi:type="mlexpressions:MLStringExpression" uuid="_B_wPUhg9Eeaas5O4vKYohg" expressionString="component" expressionLanguageID="OCL"/>
@@ -257,7 +257,7 @@
   </nodes>
   <nodes xsi:type="mlsdm:ExpressionActivityNode" uuid="_zUQQ8BhMEeaKAMVq-_H_Mw" outgoingEdges="_CqT08BhNEeaKAMVq-_H_Mw" incomingEdges="_1iPLcBhMEeaKAMVq-_H_Mw" name="Remove the old component">
     <expressions xsi:type="mlexpressions.mlcallactions:CallActionExpression" uuid="_3APaghhMEeaKAMVq-_H_Mw">
-      <callActions xsi:type="mlexpressions.mlcallactions:ActivityCallAction" uuid="_3YvaGxhMEeaKAMVq-_H_Mw">
+      <callActions xsi:type="mlsdm:ActivityCallAction" uuid="_3YvaGxhMEeaKAMVq-_H_Mw">
         <parameters uuid="_49ua4RhMEeaKAMVq-_H_Mw" name="component">
           <type xsi:type="ecore:EClass" href="http://www.mdelab.de/morisia/comparch#//Component"/>
           <valueExpression xsi:type="mlexpressions:MLStringExpression" uuid="_6kXokhhMEeaKAMVq-_H_Mw" expressionString="component" expressionLanguageID="OCL"/>

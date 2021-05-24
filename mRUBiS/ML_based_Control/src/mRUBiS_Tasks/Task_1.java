@@ -54,7 +54,7 @@ import de.mdelab.morisia.selfhealing.rules.PerformanceEfficiencyManager;
 import de.mdelab.morisia.selfhealing.rules.RuleSelector;
 import de.mdelab.morisia.selfhealing.rules.UtilityIncreasePredictor;
 import de.mdelab.sdm.interpreter.core.SDMException;
-import de.mdelab.sdm.interpreter.core.variables.Variable;
+import de.mdelab.expressions.interpreter.core.variables.Variable;
 import de.mdelab.mlsdm.interpreter.facade.OptimizedMSLDMInstanceFacade;
 import de.mdelab.morisia.selfhealing.Approaches;
 import de.mdelab.morisia.selfhealing.ArchitectureUtilCal;
