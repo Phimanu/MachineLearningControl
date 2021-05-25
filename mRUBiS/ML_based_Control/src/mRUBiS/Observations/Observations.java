@@ -93,7 +93,8 @@ public class Observations {
 		InjectionStrategy strategy = new Trace_1
 				(simulator.getSupportedIssueTypes(), mRubis);
 		simulator.setInjectionStrategy(strategy);
-
+		
+		System.out.println(Observations.getComponentsUtility());
 	}
 
 	// TODO:
