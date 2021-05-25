@@ -27,17 +27,25 @@ public class UtilityHiddenState {
 
 	/** object to generate Gaussian numbers, initial seed=9876 */
 	private Random randomGenerator = new Random(9876);
+	
+	 /** determines how far from the "referenceUtility" should we start. 
+	  * The default is 1.5, which implies a 150% of the reference utility value*/
+	private Double delta = 1.5; 
 
 	/** 
 	 * In case one ones to change the standard calibration of the auto-regressive model
 	 * @param theta convergence rate towards the utility of reference
 	 * @param sigma rate to compute the variance around the current utility
+	 * @param randomSeed initial seed to add noise to the auto-regressive model that updates the utility of each component
+	 * @param delta determines how far from the "referenceUtility" should we start
 	 */
-	public UtilityHiddenState(Double theta, Double sigma, long randomSeed) {
+	public UtilityHiddenState(Double theta, Double sigma, long randomSeed, Double delta) {
 		this.theta =  theta;
 		this.sigma = sigma;
 		this.randomGenerator =  new Random(randomSeed); 
+		this.delta = delta;
 		//TODO for all components, initialize the ReferenceUtilityStateMap
+		//TODO for all components, initialize the CurrentUtilityStateMap, for each component -> currentUtility = referenceUtility*delta
 	}
 
 	/**
@@ -46,7 +54,7 @@ public class UtilityHiddenState {
 	 * @param componetType: the key name of a component type
 	 * @return: currentUtility which is a utility shifted closer to the referenceUtility
 	 */
-	public Double getUpdatedUtility(String shop, String componentType) {
+	public Double updateCurrentUtility(String shop, String componentType) {
 
 		String key = shop+":"+componentType;
 		Double previousUtility = (Double) this.CurrentUtilityStateMap.get(key);
@@ -59,10 +67,13 @@ public class UtilityHiddenState {
 		else {//Compute the new utility based on previous one
 
 			double variance = this.sigma.doubleValue() * this.randomGenerator.nextGaussian(); //nextGaussian samples from a normal distribution with mean=0,std=1
-			double convergence_shift = this.theta.doubleValue() * (referenceUtility.doubleValue() - previousUtility.doubleValue());
-			double current_utility = previousUtility.doubleValue() +  convergence_shift + variance;
-			this.CurrentUtilityStateMap.put(key,current_utility);
-			return current_utility;
+			double convergenceShift = this.theta.doubleValue() * (referenceUtility.doubleValue() - previousUtility.doubleValue());
+			double currentUtility = previousUtility.doubleValue() +  convergenceShift + variance;
+			
+			//Stores new state
+			this.CurrentUtilityStateMap.put(key,currentUtility);
+			
+			return currentUtility;
 		}
 	}
 
