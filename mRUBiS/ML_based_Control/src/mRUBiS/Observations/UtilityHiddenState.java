@@ -61,6 +61,7 @@ public class UtilityHiddenState {
 			double variance = this.sigma.doubleValue() * this.randomGenerator.nextGaussian(); //nextGaussian samples from a normal distribution with mean=0,std=1
 			double convergence_shift = this.theta.doubleValue() * (referenceUtility.doubleValue() - previousUtility.doubleValue());
 			double current_utility = previousUtility.doubleValue() +  convergence_shift + variance;
+			this.CurrentUtilityStateMap.put(key,current_utility);
 			return current_utility;
 		}
 	}
