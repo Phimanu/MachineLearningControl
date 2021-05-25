@@ -1,6 +1,9 @@
 package mRUBiS.Observations;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 
 /**
@@ -44,8 +47,39 @@ public class UtilityHiddenState {
 		this.sigma = sigma;
 		this.randomGenerator =  new Random(randomSeed); 
 		this.delta = delta;
+		this.intilializeReferenceUtilityMap();
+		this.initializeCurrentUtilityMap();
+	}
+	
+
+	/**
+	 * For all components of the mRubis instance, 
+	 * obtain their utility values and store under a key "shop:componentType"
+	 */
+	private void intilializeReferenceUtilityMap() {
 		//TODO for all components, initialize the ReferenceUtilityStateMap
-		//TODO for all components, initialize the CurrentUtilityStateMap, for each component -> currentUtility = referenceUtility*delta
+	}
+
+	
+	/**
+	 * For each component in the ReferenceUtilityStateMap:
+	 * currentUtility = referenceUtility * this.delta
+	 */
+	private void initializeCurrentUtilityMap() {
+		// Getting an iterator
+        Iterator<Entry<String, Double>> hmIterator = this.ReferenceUtilityStateMap.entrySet().iterator();
+  
+        // Iterate through the hashmap
+        // and add some bonus marks for every student
+        System.out.println("HashMap after adding bonus marks:");
+  
+        while (hmIterator.hasNext()) {
+            Map.Entry mapElement = (Map.Entry)hmIterator.next();
+            String key = ((String)mapElement.getKey());
+            Double referenceUtility = ((Double)mapElement.getValue());
+            Double currentUtility = referenceUtility * this.delta;
+            this.CurrentUtilityStateMap.put(key,currentUtility);
+        }
 	}
 
 	/**
@@ -75,6 +109,18 @@ public class UtilityHiddenState {
 			
 			return currentUtility;
 		}
+	}
+	
+	/**
+	 * Allows to reset the current utility of particular component. 
+	 * This happens when a component has been restarted.
+	 * @param shop
+	 * @param componentType
+	 */
+	public void resetUtilityState(String shop, String componentType) {
+		String key = shop+":"+componentType;
+		Double referenceUtility = (Double) this.ReferenceUtilityStateMap.get(key);
+		this.CurrentUtilityStateMap.put(key,referenceUtility*this.delta);		
 	}
 
 
