@@ -34,7 +34,15 @@ public class UtilityHiddenState {
 	 /** determines how far from the "referenceUtility" should we start. 
 	  * The default is 1.5, which implies a 150% of the reference utility value*/
 	private Double delta = 1.5; 
-
+	
+	/**
+	 * Constructor that uses the default parameters values
+	 */
+	public UtilityHiddenState() {
+		this.intilializeReferenceUtilityMap();
+		this.initializeCurrentUtilityMap();
+	}
+	
 	/** 
 	 * In case one ones to change the standard calibration of the auto-regressive model
 	 * @param theta convergence rate towards the utility of reference
