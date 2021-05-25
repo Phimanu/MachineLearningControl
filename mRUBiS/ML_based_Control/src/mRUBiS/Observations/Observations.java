@@ -54,14 +54,14 @@ public class Observations {
 			Architecture architecture = (Architecture) architectureResource.getContents().get(0);
 
 			mRubis = architecture;
-			
-			
-		
+
+
+
 
 			// EMF Delete Optimization
 			if (useOptimization) {
 				((OptimizedMSLDMInstanceFacade) interpreter.getFacadeFactory().getInstanceFacade())
-						.initialize(Collections.singleton(architecture));
+				.initialize(Collections.singleton(architecture));
 			}
 
 			Annotations annotations = architecture.getAnnotations();
@@ -69,11 +69,11 @@ public class Observations {
 				annotations = ComparchFactory.eINSTANCE.createAnnotations();
 				architecture.setAnnotations(annotations);
 			}
-			
 
-			
-			
-			
+
+
+
+
 		}
 
 	}
@@ -82,17 +82,17 @@ public class Observations {
 		// inject failures
 		// attach event listener
 		//loop for RUNS=1
-					mRubis.eAdapters().add(new EventListener());
+		mRubis.eAdapters().add(new EventListener());
 
-					// set up simulator:
-					String logFile = null;
-					boolean logToConsole = false;
-					ComparchSimulator simulator = ComparchSimulator.FACTORY.createSimulator(Capability.SELF_REPAIR,
-							mRubis, 1, Level.CONFIG, logFile, logToConsole);
-							//InjectionStrategy strategy = new testTrace
-					InjectionStrategy strategy = new Trace_1
-							(simulator.getSupportedIssueTypes(), mRubis);
-					simulator.setInjectionStrategy(strategy);
+		// set up simulator:
+		String logFile = null;
+		boolean logToConsole = false;
+		ComparchSimulator simulator = ComparchSimulator.FACTORY.createSimulator(Capability.SELF_REPAIR,
+				mRubis, 1, Level.CONFIG, logFile, logToConsole);
+		//InjectionStrategy strategy = new testTrace
+		InjectionStrategy strategy = new Trace_1
+				(simulator.getSupportedIssueTypes(), mRubis);
+		simulator.setInjectionStrategy(strategy);
 
 	}
 
@@ -149,10 +149,10 @@ public class Observations {
 
 
 		}
-		
+
 		return json;
 
-/*
+		/*
 		List<Issue> allIssues = new LinkedList<>();
 		allIssues.addAll(mRubis.getAnnotations().getIssues());
 		for (Issue issue : allIssues)
@@ -160,35 +160,35 @@ public class Observations {
 		issue.getUtilityDrop();
 		issue.getHandledBy();
 		issue.getHandledBy().get(0).getCosts();}
-		*/
+		 */
 
 	}
-	
-public static void makeObservation(Architecture mRUBiS){
-		
-		
+
+	public static void makeObservation(Architecture mRUBiS){
+
+
 		ArchitectureUtilCal.computeOverallUtility(mRUBiS);
-		
+
 		for (Tenant shop : mRUBiS.getTenants())
 		{ArchitectureUtilCal.computeShopUtility(shop);
-		
-			shop.getName();
-			shop.getCriticality();
-			shop.getPerformance();
-			shop.getRequest();
-				
-		
+
+		shop.getName();
+		shop.getCriticality();
+		shop.getPerformance();
+		shop.getRequest();
+
+
 		for ( Component component : shop.getComponents())
 		{    ArchitectureUtilCal.computeComponentUtility(component);
-			component.getInUseReplica();
-			component.getIssues();
-			component.getType();
-			component.getCriticality();
+		component.getInUseReplica();
+		component.getIssues();
+		component.getType();
+		component.getCriticality();
 		}
-		
+
 		}
-		
-		
+
+
 		List<Issue> allIssues = new LinkedList<>();
 		allIssues.addAll(mRUBiS.getAnnotations().getIssues());
 		for (Issue issue : allIssues)
@@ -197,7 +197,7 @@ public static void makeObservation(Architecture mRUBiS){
 		issue.getHandledBy();
 		issue.getHandledBy().get(0).getCosts();}
 
-}
+	}
 }
 
 
