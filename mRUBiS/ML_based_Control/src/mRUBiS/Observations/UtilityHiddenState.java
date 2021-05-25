@@ -7,9 +7,9 @@ import java.util.Map.Entry;
 import java.util.Random;
 
 /**
- * Keeps the hidden utility states of each component and shop.
- * The states are hidden because they are produce by a time series generator (auto-regressive model)
- * that is not visible to controller.
+ * Keeps the hidden utility states of each component type at a given shop.
+ * The states are hidden because they are produce by a time series generator (auto-regressive model).
+ * This generative process is invisible to the controller or any external agent.
  *  
  * @author Christian Adriano
  *
@@ -74,7 +74,7 @@ public class UtilityHiddenState {
         System.out.println("HashMap after adding bonus marks:");
   
         while (hmIterator.hasNext()) {
-            Map.Entry mapElement = (Map.Entry)hmIterator.next();
+            Map.Entry<String,Double> mapElement = (Map.Entry<String,Double>)hmIterator.next();
             String key = ((String)mapElement.getKey());
             Double referenceUtility = ((Double)mapElement.getValue());
             Double currentUtility = referenceUtility * this.delta;
@@ -84,9 +84,9 @@ public class UtilityHiddenState {
 
 	/**
 	 * Implements the auto-regressive model combined with an Ornstein–Uhlenbeck procedure.
-	 * @param shop: the key name of a shop
-	 * @param componetType: the key name of a component type
-	 * @return: currentUtility which is a utility shifted closer to the referenceUtility
+	 * @param shop the key name of a shop
+	 * @param componetType the key name of a component type
+	 * @return currentUtility which is a utility shifted closer to the referenceUtility
 	 */
 	public Double updateCurrentUtility(String shop, String componentType) {
 
@@ -112,10 +112,10 @@ public class UtilityHiddenState {
 	}
 	
 	/**
-	 * Allows to reset the current utility of particular component. 
-	 * This happens when a component has been restarted.
-	 * @param shop
-	 * @param componentType
+	 * This method allows to reset the current utility of particular component. 
+	 * This should happen when a component has been restarted.
+	 * @param shop the key name of a shop
+	 * @param componetType the key name of a component type
 	 */
 	public void resetUtilityState(String shop, String componentType) {
 		String key = shop+":"+componentType;
