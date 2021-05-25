@@ -2,17 +2,28 @@ package mRUBiS.Observations;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 
 import org.eclipse.emf.ecore.resource.Resource;
 
+import de.mdelab.mlsdm.interpreter.MLSDMInterpreter;
+import de.mdelab.mlsdm.interpreter.facade.OptimizedMSLDMInstanceFacade;
+import de.mdelab.morisia.comparch.Annotations;
 import de.mdelab.morisia.comparch.Architecture;
+import de.mdelab.morisia.comparch.ComparchFactory;
 import de.mdelab.morisia.comparch.Component;
 import de.mdelab.morisia.comparch.Issue;
 import de.mdelab.morisia.comparch.Tenant;
+import de.mdelab.morisia.comparch.simulator.Capability;
+import de.mdelab.morisia.comparch.simulator.ComparchSimulator;
+import de.mdelab.morisia.comparch.simulator.InjectionStrategy;
+import de.mdelab.morisia.comparch.simulator.impl.Trace_1;
 import de.mdelab.morisia.selfhealing.ArchitectureUtilCal;
 import de.mdelab.morisia.selfhealing.EnvSetUp;
+import de.mdelab.morisia.selfhealing.incremental.EventListener;
 import de.mdelab.sdm.interpreter.core.SDMException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -27,9 +38,13 @@ public class Observations {
 		Observations.executionLoop();
 	}
 
-	private static void initializeMRubisInstance() {
+	private static void initializeMRubisInstance() throws SDMException {
 
 		if (mRubis == null) {
+			EnvSetUp.initialize();
+			boolean stdout = false;
+			final boolean useOptimization = true;
+			MLSDMInterpreter interpreter = EnvSetUp.getStoryDiagramInterpreter(stdout, useOptimization);
 			Resource architectureResource = EnvSetUp
 
 					.loadFreshInstance("model/enriched/mRUBiS-1shop_enriched.comparch");
@@ -39,12 +54,46 @@ public class Observations {
 			Architecture architecture = (Architecture) architectureResource.getContents().get(0);
 
 			mRubis = architecture;
+			
+			
+		
+
+			// EMF Delete Optimization
+			if (useOptimization) {
+				((OptimizedMSLDMInstanceFacade) interpreter.getFacadeFactory().getInstanceFacade())
+						.initialize(Collections.singleton(architecture));
+			}
+
+			Annotations annotations = architecture.getAnnotations();
+			if (annotations == null) {
+				annotations = ComparchFactory.eINSTANCE.createAnnotations();
+				architecture.setAnnotations(annotations);
+			}
+			
+
+			
+			
+			
 		}
 
 	}
 
 	private static void executionLoop() {
 		// inject failures
+		// attach event listener
+		//loop for RUNS=1
+					mRubis.eAdapters().add(new EventListener());
+
+					// set up simulator:
+					String logFile = null;
+					boolean logToConsole = false;
+					ComparchSimulator simulator = ComparchSimulator.FACTORY.createSimulator(Capability.SELF_REPAIR,
+							mRubis, 1, Level.CONFIG, logFile, logToConsole);
+							//InjectionStrategy strategy = new testTrace
+					InjectionStrategy strategy = new Trace_1
+							(simulator.getSupportedIssueTypes(), mRubis);
+					simulator.setInjectionStrategy(strategy);
+
 	}
 
 	// TODO:
