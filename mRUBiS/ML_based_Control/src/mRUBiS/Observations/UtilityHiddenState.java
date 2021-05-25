@@ -41,12 +41,12 @@ public class UtilityHiddenState {
 	}
 
 	/**
-	 * An auto-regressive model combined with an Ornstein–Uhlenbeck procedure.
-	 * @param reference_utility: value to end with -> utility of a <componenten, failure>
-	 * @param theta: how fast to converge -> fixed to 0.1
-	 * @return: current utility shifted closer to the reference_utility
+	 * Implements the auto-regressive model combined with an Ornstein–Uhlenbeck procedure.
+	 * @param shop: the key name of a shop
+	 * @param componetType: the key name of a component type
+	 * @return: currentUtility which is a utility shifted closer to the referenceUtility
 	 */
-	public Double updateUtility(String shop, String componentType) {
+	public Double getUpdatedUtility(String shop, String componentType) {
 
 		String key = shop+":"+componentType;
 		Double previousUtility = (Double) this.CurrentUtilityStateMap.get(key);
@@ -65,7 +65,5 @@ public class UtilityHiddenState {
 		}
 	}
 
-
-}
 
 }
