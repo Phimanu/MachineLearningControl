@@ -130,7 +130,7 @@ if(runCount%10==0) {
 						.equals("Future Sales Item Filter")) {
 					// last filter of the pipe should bot be affected by an
 					// issue.
-					component = null;
+					//component = null;
 				}
 			}
 			return component;
