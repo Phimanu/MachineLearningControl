@@ -75,10 +75,10 @@ public class Task_1 {
 	public static FileWriter MLValidation = null;
 	
 	
-	private final static int RUNS = 100;//10000; 
+	private final static int RUNS = 10;//10000; 
 
 	private final static String SEP = ",";
-	private final static boolean Log = false;
+	private final static boolean Log = true;
 
 
 	

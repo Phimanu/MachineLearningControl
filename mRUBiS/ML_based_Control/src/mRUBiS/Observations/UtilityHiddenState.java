@@ -4,6 +4,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import de.mdelab.morisia.comparch.Architecture;
+import de.mdelab.morisia.comparch.Component;
+import de.mdelab.morisia.comparch.Tenant;
+import de.mdelab.morisia.selfhealing.ArchitectureUtilCal;
+
 import java.util.Random;
 
 /**
@@ -23,7 +29,8 @@ public class UtilityHiddenState {
 	public HashMap<String,Double> ReferenceUtilityStateMap = new HashMap<String,Double>(); 
 
 	/** convergence rate towards the utility of reference */
-	private Double theta = 0.1;
+	//private Double theta = 0.01;
+	private Double theta = 0.05;
 
 	/** rate to compute the variance around the current utility */
 	private Double sigma = 1.0;
@@ -38,8 +45,8 @@ public class UtilityHiddenState {
 	/**
 	 * Constructor that uses the default parameters values
 	 */
-	public UtilityHiddenState() {
-		this.intilializeReferenceUtilityMap();
+	public UtilityHiddenState(Architecture mRUBiS) {
+		this.intilializeReferenceUtilityMap(mRUBiS);
 		this.initializeCurrentUtilityMap();
 	}
 	
@@ -50,12 +57,12 @@ public class UtilityHiddenState {
 	 * @param randomSeed initial seed to add noise to the auto-regressive model that updates the utility of each component
 	 * @param delta determines how far from the "referenceUtility" should we start
 	 */
-	public UtilityHiddenState(Double theta, Double sigma, long randomSeed, Double delta) {
+	public UtilityHiddenState(Architecture mRUBiS,Double theta, Double sigma, long randomSeed, Double delta) {
 		this.theta =  theta;
 		this.sigma = sigma;
 		this.randomGenerator =  new Random(randomSeed); 
 		this.delta = delta;
-		this.intilializeReferenceUtilityMap();
+		this.intilializeReferenceUtilityMap(mRUBiS);
 		this.initializeCurrentUtilityMap();
 	}
 	
@@ -64,9 +71,23 @@ public class UtilityHiddenState {
 	 * For all components of the mRubis instance, 
 	 * obtain their utility values and store under a key "shop:componentType"
 	 */
-	private void intilializeReferenceUtilityMap() {
-		//TODO for all components, initialize the ReferenceUtilityStateMap
-	}
+	private void intilializeReferenceUtilityMap(Architecture mRUBiS) {
+		
+		for(Tenant shop:mRUBiS.getTenants())
+		{	String shopName=shop.getName();
+		for (Component component:shop.getComponents())
+		{String componentType=component.getType().getName();
+		if (componentType.contains("Authentication Service"))
+		{componentType="Authentication Service";}
+		double referenceUtility = ArchitectureUtilCal.computeComponentUtility(component);
+		String key =shopName+":"+componentType;
+		this.ReferenceUtilityStateMap.put(key, referenceUtility);
+		 System.out.println("\n For Component "+ componentType+ " in shop "+ shopName+ " Reference Utility is "+referenceUtility);
+		}
+
+		}
+		}
+
 
 	
 	/**
@@ -79,7 +100,7 @@ public class UtilityHiddenState {
   
         // Iterate through the hashmap
         // and add some bonus marks for every student
-        System.out.println("HashMap after adding bonus marks:");
+      //  System.out.println("HashMap after adding bonus marks:");
   
         while (hmIterator.hasNext()) {
             Map.Entry<String,Double> mapElement = (Map.Entry<String,Double>)hmIterator.next();
@@ -87,34 +108,40 @@ public class UtilityHiddenState {
             Double referenceUtility = ((Double)mapElement.getValue());
             Double currentUtility = referenceUtility * this.delta;
             this.CurrentUtilityStateMap.put(key,currentUtility);
-        }
+            System.out.println("\n  --- Current Utility for key "+ key+" is "+currentUtility); }
 	}
 
 	/**
-	 * Implements the auto-regressive model combined with an Ornstein–Uhlenbeck procedure.
-	 * @param shop the key name of a shop
+	 * Implements the auto-regressive model combined with an Ornsteinï¿½Uhlenbeck procedure.
+	 * @param shopName the key name of a shop
 	 * @param componetType the key name of a component type
 	 * @return currentUtility which is a utility shifted closer to the referenceUtility
 	 */
-	public Double updateCurrentUtility(String shop, String componentType) {
+	public  Double getCurrentUtility(Component component) {
 
-		String key = shop+":"+componentType;
-		Double previousUtility = (Double) this.CurrentUtilityStateMap.get(key);
-		Double referenceUtility = (Double) this.ReferenceUtilityStateMap.get(key);
+		String componentType=component.getType().getName();
+		if (componentType.contains("Authentication Service"))
+		{componentType="Authentication Service";}
+		String shopName=component.getTenant().getName();
+		String key = shopName+":"+componentType;
 
-		if(previousUtility==null) {
-			//TODO obtain reference_utility for componetType at shop
-			return(previousUtility);
+
+		if(!this.CurrentUtilityStateMap.containsKey(key)) {
+			//Invalid Operation
+			System.out.println("\n key " + key+ " is Invalid!!!!");
+			return(null);
 		}
 		else {//Compute the new utility based on previous one
-
+			Double previousUtility = (Double) this.CurrentUtilityStateMap.get(key);
+			Double referenceUtility = (Double) this.ReferenceUtilityStateMap.get(key);
 			double variance = this.sigma.doubleValue() * this.randomGenerator.nextGaussian(); //nextGaussian samples from a normal distribution with mean=0,std=1
 			double convergenceShift = this.theta.doubleValue() * (referenceUtility.doubleValue() - previousUtility.doubleValue());
 			double currentUtility = previousUtility.doubleValue() +  convergenceShift + variance;
 			
 			//Stores new state
 			this.CurrentUtilityStateMap.put(key,currentUtility);
-			
+			 System.out.println("\n U is " + currentUtility);
+			  
 			return currentUtility;
 		}
 	}
@@ -122,11 +149,13 @@ public class UtilityHiddenState {
 	/**
 	 * This method allows to reset the current utility of particular component. 
 	 * This should happen when a component has been restarted.
-	 * @param shop the key name of a shop
+	 * @param shopName the key name of a shop
 	 * @param componetType the key name of a component type
 	 */
-	public void resetUtilityState(String shop, String componentType) {
-		String key = shop+":"+componentType;
+	public void resetUtilityState(String shopName, String componentType) {
+		if (componentType.contains("Authentication Service"))
+		{componentType="Authentication Service";}
+		String key = shopName+":"+componentType;
 		Double referenceUtility = (Double) this.ReferenceUtilityStateMap.get(key);
 		this.CurrentUtilityStateMap.put(key,referenceUtility*this.delta);		
 	}

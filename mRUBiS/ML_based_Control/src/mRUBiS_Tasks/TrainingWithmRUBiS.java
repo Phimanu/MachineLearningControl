@@ -86,7 +86,7 @@ public class TrainingWithmRUBiS {
 	
 	public static void main(String[] args) throws SDMException, IOException {
 
-		boolean enableLogging = false;
+		boolean enableLogging = true;
 		configLogging(enableLogging);
 
 		/*
