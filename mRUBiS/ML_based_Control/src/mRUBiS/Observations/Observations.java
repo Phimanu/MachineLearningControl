@@ -38,7 +38,7 @@ public class Observations {
 		Observations.executionLoop();
 	}
 
-	private static void initializeMRubisInstance() throws SDMException {
+	public static void initializeMRubisInstance() throws SDMException {
 
 		if (mRubis == null) {
 			EnvSetUp.initialize();
@@ -78,7 +78,7 @@ public class Observations {
 
 	}
 
-	private static void executionLoop() {
+	public static String executionLoop() {
 		// inject failures
 		// attach event listener
 		//loop for RUNS=1
@@ -94,7 +94,8 @@ public class Observations {
 				(simulator.getSupportedIssueTypes(), mRubis);
 		simulator.setInjectionStrategy(strategy);
 		
-		System.out.println(Observations.getComponentsUtility());
+		//System.out.println(Observations.getComponentsUtility());
+		return Observations.getComponentsUtility();
 	}
 
 	// TODO:

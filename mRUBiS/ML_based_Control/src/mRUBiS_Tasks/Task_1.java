@@ -2,6 +2,7 @@ package mRUBiS_Tasks;
 
 import java.io.FileWriter;
 import java.io.*;
+import java.net.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -85,21 +86,36 @@ public class Task_1 {
 	
 	public static void main(String[] args) throws SDMException, IOException, InterruptedException {
 		
+ 
+		Observations obs = new Observations();
+        ServerSocket server = new ServerSocket(8080);
+        PrintWriter logger = new PrintWriter("log.txt", "UTF-8");
+        System.out.println("wait for connection on port 8080");
+        Socket client = server.accept();
+        System.out.println("got connection on port 8080");
+        BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+        String state = obs.executionLoop();
+        PrintWriter out = new PrintWriter(client.getOutputStream(),true);
+        logger.println("Right before the try");
 		try {
-			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
-			PrintWriter writer = new PrintWriter("result.txt", "UTF-8");
-			writer.println("Start");
-			String s;
-			while(((s = bufferRead.readLine()) != null) && (s.equals("x") == false)) {
-				writer.println(s);
-				String answer = String.format("The message was: %s", s);
-				System.out.println(answer);
+			logger.println("trying...");
+			String s;			
+			while(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
+				if(s == "get_all") {
+					state = obs.executionLoop();
+					out.println(state);
+					logger.println(state);
+				}
+				out.println(s);
 			}
-			writer.close();
+			logger.println(s);
+			logger.println("closed");
+			out.close();
+			logger.close();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		boolean enableLogging = false;
 		configLogging(enableLogging);
 

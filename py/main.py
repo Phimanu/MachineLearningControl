@@ -1,12 +1,12 @@
 from subprocess import PIPE, Popen
-
+import socket
+import json
 
 def initialize_mrubis():
     # Put your command line here (In Eclipse: Run -> Run Configurations... -> Show Command Line)
     path = open("path.txt").read()
     args = fr'{path}'
-
-    return Popen(args, stdin=PIPE, stdout=PIPE, shell=False)
+    Popen(args, stdin=PIPE, stdout=PIPE, shell=False)
 
 '''
 def components_status():
@@ -39,17 +39,32 @@ def load_model():
 
 
 def main():
-    mrubis = initialize_mrubis()
+    initialize_mrubis()
+    HOST = "localhost"
+    PORT = 8080
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((HOST, PORT))
+
+    sock.sendall("get_all\n".encode("utf-8"))
+    data = sock.recv(64000)
+
+    # Program flow:
+    print(data)
+    sock.sendall("exit\n".encode("utf-8"))
+    sock.close()
+    print("Socket closed")
 
     #Run EITHER of the two code blocks below
     #This doesnt work.
-    for i in range(10):
-        mrubis.stdin.write("Test\r\n".encode("utf-8"))
-        ans = mrubis.stdout.readline()
-        print(ans)
+    #for i in range(10):
+    #    mrubis.stdin.write("Test\r\n".encode("utf-8"))
+    #    ans = mrubis.stdout.readline()
+    #    print(ans)
 
     # This works but enforces connection close.
-    ans = mrubis.communicate(input="Test\r\n".encode("utf-8"))
-    print(ans)
+    #ans = mrubis.communicate(input="Test\r\n".encode("utf-8"))
+    #print(ans)
+
 
 main()
