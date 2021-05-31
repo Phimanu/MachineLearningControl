@@ -35,7 +35,7 @@ public class testTrace implements InjectionStrategy {
 		List<Injection<? extends ArchitecturalElement>> injections = new LinkedList<Injection<? extends ArchitecturalElement>>();
 		
 		
-		injections.add(new Injection<Component>(IssueType.CF1, this.getComponent(0, 3)));
+		injections.add(new Injection<Component>(IssueType.CF1, this.findMostCriticalComponent(0)));
 		// injections.add(new Injection<ProvidedInterface>(IssueType.CF2, this.getComponent(0, 2).
 			//	 getProvidedInterfaces().get(0)));
 /*if(runCount%10==0) {

@@ -1,5 +1,4 @@
-package mRUBiS_Tasks;
-
+package trainingMRUBiS;
 import java.io.FileWriter;
 import java.io.*;
 import java.io.IOException;
@@ -63,7 +62,7 @@ import de.mdelab.morisia.selfhealing.EnvSetUp;
 import de.mdelab.morisia.selfhealing.Utilityfunction;
 import mRUBiS.Observations.Observations;
 
-public class Task_1 {
+public class LogGenerator {
 
  // public static Approaches CURRENT_APPROACH = Approaches.Udriven;
   public static Approaches CURRENT_APPROACH = Approaches.RANDOM;
@@ -75,7 +74,7 @@ public class Task_1 {
 	public static FileWriter MLValidation = null;
 	
 	
-	private final static int RUNS = 10;//10000; 
+	private final static int RUNS = 100;//10000; 
 
 	private final static String SEP = ",";
 	private final static boolean Log = true;
@@ -83,23 +82,8 @@ public class Task_1 {
 
 	
 	
-	public static void main(String[] args) throws SDMException, IOException, InterruptedException {
-		
-		try {
-			BufferedReader bufferRead = new BufferedReader(new InputStreamReader(System.in));
-			PrintWriter writer = new PrintWriter("result.txt", "UTF-8");
-			writer.println("Start");
-			String s;
-			while(((s = bufferRead.readLine()) != null) && (s.equals("x") == false)) {
-				writer.println(s);
-				String answer = String.format("The message was: %s", s);
-				System.out.println(answer);
-			}
-			writer.close();
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-		
+	public static void main(String[] args) throws SDMException, IOException {
+
 		boolean enableLogging = false;
 		configLogging(enableLogging);
 
@@ -161,8 +145,7 @@ public class Task_1 {
 		
 	
 
-		
-		if (Log) {
+	if (Log) {
 		
 			
 			
@@ -175,7 +158,6 @@ public class Task_1 {
 					+ "RULE" + SEP + " PMax" + SEP + "alpha" + SEP + "In Use REPLICA" + SEP + "LOAD"+"\n");
 			
 		}
-		
 	/*
 		 * Benchmark actually starts
 		 */
@@ -342,7 +324,7 @@ public class Task_1 {
 									+ issue.getAffectedComponent().getType().getPerformanceMax() + SEP
 									+ (4 / issue.getAffectedComponent().getType().getSatPoint()) + SEP
 									+ issue.getAffectedComponent().getInUseReplica() + SEP
-									+ issue.getAffectedComponent().getRequest() + SEP 
+									+ issue.getAffectedComponent().getRequest()  
 									+ "\n"
 
 							);
@@ -351,7 +333,7 @@ public class Task_1 {
 						
 						}
 						 
-						 Training.append("\n");
+						
 					}
 				
 
@@ -631,6 +613,6 @@ public class Task_1 {
 		}
 		logger.removeHandler(toBeRemoved);
 	}
-	
+
 
 }
