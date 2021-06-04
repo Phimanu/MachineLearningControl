@@ -9,15 +9,28 @@ def initialize_mrubis():
         launch_args = json.load(f)
 
     args = [
+        'cd',
+        '/Users/paul/Documents/Control/MachineLearningControl/mRUBiS/ML_based_Control/src/mRUBiS_Tasks/',
+        '&&',
         launch_args['java_path'],
         '-DFile.encoding=UTF-8',
         '-classpath',
         launch_args['dependency_paths'],
         '-XX:+ShowCodeDetailsInExceptionMessages',
-        launch_args['class_to_run']
+        launch_args['class_to_run'],
+        '&&'
+        'cd',
+        '/Users/paul/Documents/Control/MachineLearningControl/py'
     ]
 
-    Popen(args, stdin=PIPE, stdout=PIPE, shell=False)
+    pipe = Popen(
+        args, 
+        stdin=PIPE, 
+        stdout=PIPE, 
+        shell=False
+    )
+
+    return pipe
 
 '''
 def components_status():
@@ -50,9 +63,15 @@ def load_model():
 
 
 def main():
-    initialize_mrubis()
+    pipe = initialize_mrubis()
+    if pipe.returncode is None:
+        print('MRUBIS is running')
     HOST = "localhost"
     PORT = 8080
+
+    print(pipe.stdin)
+    print(pipe.stdout)
+    print(pipe.stderr)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((HOST, PORT))
@@ -65,6 +84,8 @@ def main():
     sock.sendall("exit\n".encode("utf-8"))
     sock.close()
     print("Socket closed")
+
+    pipe.terminate()
 
     #Run EITHER of the two code blocks below
     #This doesnt work.

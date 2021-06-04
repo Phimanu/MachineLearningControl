@@ -64,6 +64,7 @@ import de.mdelab.morisia.selfhealing.EnvSetUp;
 import de.mdelab.morisia.selfhealing.Utilityfunction;
 import mRUBiS.Observations.Observations;
 
+
 public class Task_1 {
 
  // public static Approaches CURRENT_APPROACH = Approaches.Udriven;
@@ -85,36 +86,6 @@ public class Task_1 {
 	
 	
 	public static void main(String[] args) throws SDMException, IOException, InterruptedException {
-		
- 
-		Observations obs = new Observations();
-        ServerSocket server = new ServerSocket(8080);
-        PrintWriter logger = new PrintWriter("log.txt", "UTF-8");
-        System.out.println("wait for connection on port 8080");
-        Socket client = server.accept();
-        System.out.println("got connection on port 8080");
-        BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-        String state = obs.executionLoop();
-        PrintWriter out = new PrintWriter(client.getOutputStream(),true);
-        logger.println("Right before the try");
-		try {
-			logger.println("trying...");
-			String s;			
-			while(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
-				if(s == "get_all") {
-					state = obs.executionLoop();
-					out.println(state);
-					logger.println(state);
-				}
-				out.println(s);
-			}
-			logger.println(s);
-			logger.println("closed");
-			out.close();
-			logger.close();
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
 
 		boolean enableLogging = false;
 		configLogging(enableLogging);
@@ -207,6 +178,7 @@ public class Task_1 {
 																								
 	
 			Architecture architecture = (Architecture) architectureResource.getContents().get(0);
+			
 
 			// EMF Delete Optimization
 			if (useOptimization) {
@@ -238,6 +210,7 @@ public class Task_1 {
 			/*
 			 * Start the simulation
 			 */
+			
 
 			// call the simulator for the initial validation
 			int issueCount = simulator.validate();
@@ -251,6 +224,37 @@ public class Task_1 {
 		
 			while (!simulator.isSimulationCompleted()) { // = number of RUNS
 				run++;
+				
+				
+				// Make observation
+		        ServerSocket server = new ServerSocket(8080);
+		        PrintWriter logger = new PrintWriter("log.txt", "UTF-8");
+		        System.out.println("wait for connection on port 8080");
+		        Socket client = server.accept();
+		        System.out.println("got connection on port 8080");
+		        BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+		        PrintWriter out = new PrintWriter(client.getOutputStream(),true);
+		        logger.println("Right before the try");
+				try {
+					logger.println("trying...");
+					String s;			
+					while(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
+						if(s == "get_all") {
+							String state = Observations.getComponentsUtility(architecture);
+							out.println(state);
+							logger.println(state);
+							System.out.println(state);
+						}
+						out.println(s);
+					}
+					logger.println(s);
+					logger.println("closed");
+					out.close();
+					logger.close();
+				} catch(Exception e) {
+					e.printStackTrace();
+				}
+				server.close(); // this should be done somewhere else
 				
 
 				// call the simulator to inject issues.
