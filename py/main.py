@@ -4,8 +4,19 @@ import json
 
 def initialize_mrubis():
     # Put your command line here (In Eclipse: Run -> Run Configurations... -> Show Command Line)
-    path = open("path.txt").read()
-    args = fr'{path}'
+
+    with open('path.json', 'r') as f:
+        launch_args = json.load(f)
+
+    args = [
+        launch_args['java_path'],
+        '-DFile.encoding=UTF-8',
+        '-classpath',
+        launch_args['dependency_paths'],
+        '-XX:+ShowCodeDetailsInExceptionMessages',
+        launch_args['class_to_run']
+    ]
+
     Popen(args, stdin=PIPE, stdout=PIPE, shell=False)
 
 '''
@@ -67,4 +78,5 @@ def main():
     #print(ans)
 
 
-main()
+if __name__ == "__main__":
+    main()
