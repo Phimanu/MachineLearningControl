@@ -239,13 +239,12 @@ public class Task_1 {
 					logger.println("trying...");
 					String s;			
 					while(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
-						if(s == "get_all") {
+						if(s.equals("get_all")) {
 							String state = Observations.getComponentsUtility(architecture);
 							out.println(state);
 							logger.println(state);
-							System.out.println(state);
 						}
-						out.println(s);
+						out.println("Received unknown command: " + s);
 					}
 					logger.println(s);
 					logger.println("closed");
