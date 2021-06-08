@@ -11,7 +11,7 @@ def initialize_mrubis():
 
     args = [
         'cd',
-        '/Users/paul/Documents/Control/MachineLearningControl/mRUBiS/ML_based_Control/src/mRUBiS_Tasks/',
+        launch_args['mrubis_tasks_dir'],
         '&&',
         launch_args['java_path'],
         '-DFile.encoding=UTF-8',
@@ -21,7 +21,7 @@ def initialize_mrubis():
         launch_args['class_to_run'],
         '&&'
         'cd',
-        '/Users/paul/Documents/Control/MachineLearningControl/py'
+        launch_args['py_dir']
     ]
 
     pipe = Popen(
