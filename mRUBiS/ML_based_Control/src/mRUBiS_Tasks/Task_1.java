@@ -244,7 +244,9 @@ public class Task_1 {
 							out.println(state);
 							logger.println(state);
 						}
-						out.println("Received unknown command: " + s);
+						else {
+							logger.println("Received unknown command: " + s);
+						}
 					}
 					logger.println(s);
 					logger.println("closed");
