@@ -8,15 +8,15 @@ def initialize_mrubis():
     # Put your command line here (In Eclipse: Run -> Run Configurations... -> Show Command Line)
 
     with open('path.json', 'r') as f:
-        launch_args = json.load(f)
+        variable_paths = json.load(f)
 
     args = [
-        launch_args['java_path'],
+        variable_paths['java_path'],
         '-DFile.encoding=UTF-8',
         '-classpath',
-        launch_args['dependency_paths'],
+        variable_paths['dependency_paths'],
         '-XX:+ShowCodeDetailsInExceptionMessages',
-        launch_args['class_to_run'],
+        'mRUBiS_Tasks.Task_1',
     ]
 
     pipe = Popen(
@@ -24,7 +24,7 @@ def initialize_mrubis():
          stdin=PIPE, 
          stdout=PIPE, 
          shell=False,
-         cwd=launch_args['ML_based_control_dir']
+         cwd="../mRUBiS/ML_based_Control"
     )
 
     return pipe
