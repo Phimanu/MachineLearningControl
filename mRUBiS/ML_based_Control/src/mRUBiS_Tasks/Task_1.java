@@ -243,16 +243,19 @@ public class Task_1 {
 							String state = Observations.getComponentsUtility(architecture);
 							out.println(state);
 							logger.println(state);
+							break;
 						}
 						else {
-							logger.println("Received unknown command: " + s);
+							out.println("Received unknown command: " + s);
 						}
 					}
-					logger.println(s);
-					logger.println("closed");
-					out.close();
-					logger.close();
-					server.close(); // is this the right place to do this?
+					if(s.equals("exit")) {
+						logger.println(s);
+						logger.println("closed");
+						out.close();
+						logger.close();
+						server.close(); // is this the right place to do this?
+					}
 				} catch(Exception e) {
 					e.printStackTrace();
 				}
