@@ -58,16 +58,7 @@ def load_model():
     #
 '''
 
-
-def main():
-
-    proc = initialize_mrubis()
-
-    if proc.poll is None:
-        print('MRUBIS is running')
-
-    sleep(2)
-
+def get_json_from_java():
     HOST = "localhost"
     PORT = 8080
 
@@ -80,14 +71,34 @@ def main():
     # Program flow:
     try:
         mrubis_state = json.loads(data.decode("utf-8"))
-        print(mrubis_state)
     except JSONDecodeError:
         print("Could not decode JSON input, received this:")
         print(data)
+        mrubis_state = "not available"
 
     sock.sendall("exit\n".encode("utf-8"))
     sock.close()
     print("Socket closed")
+
+    return mrubis_state
+
+
+def main():
+
+    proc = initialize_mrubis()
+
+    if proc.poll is None:
+        print('MRUBIS is running')
+
+    sleep(2)
+
+    print("Getting first state...")
+    mrubis_state = get_json_from_java()
+    print(mrubis_state)
+
+    print("Getting second state...")
+    mrubis_state = get_json_from_java()
+    print(mrubis_state)
 
     proc.terminate()
 
