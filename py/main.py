@@ -1,7 +1,8 @@
+import json
+import socket
 from json.decoder import JSONDecodeError
 from subprocess import PIPE, Popen
-import socket
-import json
+from time import sleep
 
 def initialize_mrubis():
     # Put your command line here (In Eclipse: Run -> Run Configurations... -> Show Command Line)
@@ -10,25 +11,20 @@ def initialize_mrubis():
         launch_args = json.load(f)
 
     args = [
-        'cd',
-        launch_args['mrubis_tasks_dir'],
-        '&&',
         launch_args['java_path'],
         '-DFile.encoding=UTF-8',
         '-classpath',
         launch_args['dependency_paths'],
         '-XX:+ShowCodeDetailsInExceptionMessages',
         launch_args['class_to_run'],
-        '&&'
-        'cd',
-        launch_args['py_dir']
     ]
 
     pipe = Popen(
-        args, 
-        stdin=PIPE, 
-        stdout=PIPE, 
-        shell=False
+         args, 
+         stdin=PIPE, 
+         stdout=PIPE, 
+         shell=False,
+         cwd=launch_args['ML_based_control_dir']
     )
 
     return pipe
@@ -64,16 +60,16 @@ def load_model():
 
 
 def main():
-    pipe = initialize_mrubis()
-    if pipe.returncode is None:
+
+    proc = initialize_mrubis()
+
+    if proc.poll is None:
         print('MRUBIS is running')
+
+    sleep(2)
+
     HOST = "localhost"
     PORT = 8080
-
-    print(pipe.stdin)
-    print(pipe.stdout)
-    print(pipe.stderr)
-
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((HOST, PORT))
@@ -82,13 +78,18 @@ def main():
     data = sock.recv(64000)
 
     # Program flow:
-    mrubis_state = json.loads(data.decode("utf-8"))
-    print(mrubis_state)
+    try:
+        mrubis_state = json.loads(data.decode("utf-8"))
+        print(mrubis_state)
+    except JSONDecodeError:
+        print("Could not decode JSON input, received this:")
+        print(data)
+
     sock.sendall("exit\n".encode("utf-8"))
     sock.close()
     print("Socket closed")
 
-    pipe.terminate()
+    proc.terminate()
 
 if __name__ == "__main__":
     main()
