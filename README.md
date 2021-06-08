@@ -29,6 +29,9 @@ The dynamica system is a software platform of multi-tenant e-commerce shops
        - mRUBiS\mRUBiS_CompArch_Simulator
        - mRUBiS\CompArch_Metamodel
 
+## Supplying paths to the python side
+Due to the nature of Eclipse's dependency handling, we have to supply all dependencies via a terminal command. We also need to know the path to the java version which should run MRUBIS. These paths should be supplied in the `path.json` file in the `py` directory. You can get the required paths from Eclipse by going to `Run -> Run Configurations... -> Show Command Line`.
+
 ## Smoke Test!
 Run the following class as a Java Application
 - Project: Predict_SelfHealing_Utility
