@@ -252,10 +252,10 @@ public class Task_1 {
 					logger.println("closed");
 					out.close();
 					logger.close();
+					server.close(); // is this the right place to do this?
 				} catch(Exception e) {
 					e.printStackTrace();
 				}
-				server.close(); // this should be done somewhere else
 				
 
 				// call the simulator to inject issues.
