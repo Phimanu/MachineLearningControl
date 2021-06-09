@@ -221,29 +221,34 @@ public class Task_1 {
 				
 			}
 			else {System.out.println("\n\nInitial validaton. There are no issues in the model.\n \n \nCurrent Overal Utility is: "+ OveralU);}
-		
+			
 			while (!simulator.isSimulationCompleted()) { // = number of RUNS
 				run++;
 				
+				// Open up the socket
+				int port = 8080;
 				
-				// Make observation
-		        ServerSocket server = new ServerSocket(8080);
+				//System.out.println(port);
+				ServerSocket server = new ServerSocket(port);
 		        PrintWriter logger = new PrintWriter("log.txt", "UTF-8");
-		        System.out.println("wait for connection on port 8080");
+		        System.out.println("wait for connection on port " + port);
 		        Socket client = server.accept();
-		        System.out.println("got connection on port 8080");
+		        System.out.println("got connection on port " + port);
+				
 		        BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 		        PrintWriter out = new PrintWriter(client.getOutputStream(),true);
+				
 		        logger.println("Right before the try");
 				try {
 					logger.println("trying...");
 					String s;			
-					while(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
+					if(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
 						if(s.equals("get_all")) {
 							String state = Observations.getComponentsUtility(architecture);
 							out.println(state);
 							logger.println(state);
-							break;
+							server.close(); // is this the right place to do this?
+							//break;
 						}
 						else {
 							out.println("Received unknown command: " + s);
@@ -254,10 +259,13 @@ public class Task_1 {
 						logger.println("closed");
 						out.close();
 						logger.close();
-						server.close(); // is this the right place to do this?
+						server.close();
+						break;
 					}
+					//server.close(); // is this the right place to do this?
 				} catch(Exception e) {
 					e.printStackTrace();
+					break;
 				}
 				
 

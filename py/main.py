@@ -5,8 +5,8 @@ from subprocess import PIPE, Popen
 from time import sleep
 
 def initialize_mrubis():
-    # Put your command line here (In Eclipse: Run -> Run Configurations... -> Show Command Line)
 
+    # Put your command line here (In Eclipse: Run -> Run Configurations... -> Show Command Line)
     with open('path.json', 'r') as f:
         variable_paths = json.load(f)
 
@@ -59,6 +59,7 @@ def load_model():
 '''
 
 def get_json_from_java():
+
     HOST = "localhost"
     PORT = 8080
 
@@ -76,11 +77,22 @@ def get_json_from_java():
         print(data)
         mrubis_state = "not available"
 
-    sock.sendall("exit\n".encode("utf-8"))
     sock.close()
-    print("Socket closed")
 
     return mrubis_state
+
+def send_exit():
+
+    HOST = "localhost"
+    PORT = 8080
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((HOST, PORT))
+
+    sock.sendall("exit\n".encode("utf-8"))
+    data = sock.recv(64000)
+
+    sock.close()
 
 
 def main():
@@ -95,10 +107,19 @@ def main():
     print("Getting first state...")
     mrubis_state = get_json_from_java()
     print(mrubis_state)
+    #print("Socket closed")
+
+    sleep(2)
 
     print("Getting second state...")
     mrubis_state = get_json_from_java()
     print(mrubis_state)
+    #print("Socket closed")
+
+    sleep(2)
+
+    send_exit()
+    print('executed exit')
 
     proc.terminate()
 
