@@ -2,9 +2,7 @@ import json
 import socket
 from json.decoder import JSONDecodeError
 from subprocess import PIPE, Popen
-import time
 from time import sleep
-import sys
 
 def initialize_mrubis():
 
