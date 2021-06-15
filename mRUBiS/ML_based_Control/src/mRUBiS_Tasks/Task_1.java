@@ -246,10 +246,6 @@ public class Task_1 {
 					logger.println("trying...");
 					String s;			
 					if(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
-						// ensure that the server is ready to proceed
-						if(s.equals("ready?")) {
-							out.println("ready_to_proceed");
-						}
 						if(s.equals("get_all")) {
 							String state = Observations.getComponentsUtility(architecture);
 							out.println(state);

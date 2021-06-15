@@ -79,12 +79,6 @@ def send_exit(sock):
 
     sock.close()
 
-def server_is_ready(sock):
-    sock.send("ready?\n".encode("utf-8"))
-    data = sock.recv(64000)
-    return data.decode("utf-8") == "ready_to_proceed"
-
-
 def main():
 
     proc = initialize_mrubis()
@@ -102,15 +96,14 @@ def main():
 
     run = 1
     max_runs = 100
-    while run < max_runs and server_is_ready:
+    while run < max_runs:
         print(f"Getting state {run}/100...")
         mrubis_state = get_json_from_java(sock)
         print(mrubis_state)
         run += 1
 
-    if server_is_ready:
-        send_exit(sock)
-        print('executed exit')
+    send_exit(sock)
+    print('executed exit')
 
     proc.terminate()
 
