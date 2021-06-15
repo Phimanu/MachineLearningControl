@@ -1,8 +1,6 @@
-package mRUBiS_Tasks;
-
+package trainingMRUBiS;
 import java.io.FileWriter;
 import java.io.*;
-import java.net.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,9 +61,9 @@ import de.mdelab.morisia.selfhealing.ArchitectureUtilCal;
 import de.mdelab.morisia.selfhealing.EnvSetUp;
 import de.mdelab.morisia.selfhealing.Utilityfunction;
 import mRUBiS.Observations.Observations;
+import mRUBiS.Observations.UtilityHiddenState;
 
-
-public class Task_1 {
+public class NonSationaryLogGenerator {
 
  // public static Approaches CURRENT_APPROACH = Approaches.Udriven;
   public static Approaches CURRENT_APPROACH = Approaches.RANDOM;
@@ -77,7 +75,7 @@ public class Task_1 {
 	public static FileWriter MLValidation = null;
 	
 	
-	private final static int RUNS = 10;//10000; 
+	private final static int RUNS = 5000;//10000; 
 
 	private final static String SEP = ",";
 	private final static boolean Log = true;
@@ -85,20 +83,7 @@ public class Task_1 {
 
 	
 	
-	public static void main(String[] args) throws SDMException, IOException, InterruptedException {
-		
-		// Open up the socket
-		int port = 8080;
-		
-		//System.out.println(port);
-		ServerSocket server = new ServerSocket(port);
-        PrintWriter logger = new PrintWriter("log.txt", "UTF-8");
-        System.out.println("wait for connection on port " + port);
-        Socket client = server.accept();
-        System.out.println("got connection on port " + port);
-		
-        BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-        PrintWriter out = new PrintWriter(client.getOutputStream(),true);
+	public static void main(String[] args) throws SDMException, IOException {
 
 		boolean enableLogging = false;
 		configLogging(enableLogging);
@@ -161,12 +146,11 @@ public class Task_1 {
 		
 	
 
-		
-		if (Log) {
+	if (Log) {
 		
 			
 			
-			Training=new FileWriter("Logs/TrainingmRUBiS.csv");
+			Training=new FileWriter("Logs/TrainingmRUBiS_Theta0.05_NonStationary.csv");
 			
 			
 			Training.append( "Shop"+SEP + "AFFECTED_COMPONENT"+ SEP+"FAILURE_NAME" + SEP + "CURRENT_UTILITY" + SEP + "OPTIMAL_UTILITY" + SEP+ "CRITICALITY" + SEP
@@ -175,7 +159,6 @@ public class Task_1 {
 					+ "RULE" + SEP + " PMax" + SEP + "alpha" + SEP + "In Use REPLICA" + SEP + "LOAD"+"\n");
 			
 		}
-		
 	/*
 		 * Benchmark actually starts
 		 */
@@ -191,7 +174,6 @@ public class Task_1 {
 																								
 	
 			Architecture architecture = (Architecture) architectureResource.getContents().get(0);
-			
 
 			// EMF Delete Optimization
 			if (useOptimization) {
@@ -218,12 +200,12 @@ public class Task_1 {
 			InjectionStrategy strategy = new Trace_1
 					(simulator.getSupportedIssueTypes(), architecture);
 			simulator.setInjectionStrategy(strategy);
-
+			
+			UtilityHiddenState StateHiddenU=new UtilityHiddenState(architecture);
 			
 			/*
 			 * Start the simulation
 			 */
-			
 
 			// call the simulator for the initial validation
 			int issueCount = simulator.validate();
@@ -235,39 +217,8 @@ public class Task_1 {
 			}
 			else {System.out.println("\n\nInitial validaton. There are no issues in the model.\n \n \nCurrent Overal Utility is: "+ OveralU);}
 		
-			
 			while (!simulator.isSimulationCompleted()) { // = number of RUNS
 				run++;
-				
-		        logger.println("Right before the try");
-		     
-		        
-				try {
-					logger.println("trying...");
-					String s;			
-					if(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
-						if(s.equals("get_all")) {
-							String state = Observations.getComponentsUtility(architecture);
-							out.println(state);
-							logger.println(state);
-						}
-						else {
-							out.println("Received unknown command: " + s);
-						}
-					}
-					if(s.equals("exit")) {
-						logger.println(s);
-						logger.println("closed");
-						out.close();
-						logger.close();
-						server.close();
-						break;
-					}
-					//server.close(); // is this the right place to do this?
-				} catch(Exception e) {
-					e.printStackTrace();
-					break;
-				}
 				
 
 				// call the simulator to inject issues.
@@ -353,16 +304,15 @@ public class Task_1 {
 								reliability = issue.getAffectedComponent().getType().getReliability();
 							}
 
-							
-
-							
+						
 							
 							
 							Training.append( issue.getAffectedComponent().getTenant().getName()+SEP
 									+ issue.getAffectedComponent().getType().getName() + SEP
 									+ issue.eClass().getName() + SEP 
-									+  ArchitectureUtilCal.computeComponentUtility(issue.getAffectedComponent())+SEP
-									+ (ArchitectureUtilCal.computeComponentUtility(issue.getAffectedComponent())+r.getUtilityIncrease() )+ SEP 
+									//+  ArchitectureUtilCal.computeComponentUtility(issue.getAffectedComponent())+SEP
+									+ StateHiddenU.getCurrentUtility(issue.getAffectedComponent())+SEP
+									+ (StateHiddenU.getCurrentUtility(issue.getAffectedComponent())+r.getUtilityIncrease() )+ SEP 
 									+ issue.getAffectedComponent().getType().getCriticality() + SEP
 									+ r.getCosts() + SEP
 									+ numberOfConnectors + SEP
@@ -375,7 +325,7 @@ public class Task_1 {
 									+ issue.getAffectedComponent().getType().getPerformanceMax() + SEP
 									+ (4 / issue.getAffectedComponent().getType().getSatPoint()) + SEP
 									+ issue.getAffectedComponent().getInUseReplica() + SEP
-									+ issue.getAffectedComponent().getRequest() + SEP 
+									+ issue.getAffectedComponent().getRequest()  
 									+ "\n"
 
 							);
@@ -384,7 +334,7 @@ public class Task_1 {
 						
 						}
 						 
-						 Training.append("\n");
+						
 					}
 				
 
@@ -411,7 +361,6 @@ public class Task_1 {
 					execute(interpreter, allIssues, E_CF1, E_CF2, E_CF3, E_CF5);
 					annotations.getIssues().clear();
 					annotations.getRules().clear();
-					
 					
 				}//nex Run
 
@@ -665,6 +614,6 @@ public class Task_1 {
 		}
 		logger.removeHandler(toBeRemoved);
 	}
-	
+
 
 }
