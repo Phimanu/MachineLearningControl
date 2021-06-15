@@ -102,15 +102,13 @@ def main():
 
     sock.connect((HOST, PORT))
 
-    if server_is_ready:
-        print("Getting first state...")
+    run = 1
+    max_runs = 100
+    while run < max_runs and server_is_ready:
+        print(f"Getting state {run}/100...")
         mrubis_state = get_json_from_java(sock)
         print(mrubis_state)
-
-    if server_is_ready:
-        print("Getting second state...")
-        mrubis_state = get_json_from_java(sock)
-        print(mrubis_state)
+        run += 1
 
     if server_is_ready:
         send_exit(sock)
