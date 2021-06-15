@@ -2,7 +2,9 @@ import json
 import socket
 from json.decoder import JSONDecodeError
 from subprocess import PIPE, Popen
+import time
 from time import sleep
+import sys
 
 def initialize_mrubis():
 
@@ -58,18 +60,11 @@ def load_model():
     #
 '''
 
-def get_json_from_java():
+def get_json_from_java(sock):
 
-    HOST = "localhost"
-    PORT = 8080
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((HOST, PORT))
-
-    sock.sendall("get_all\n".encode("utf-8"))
+    sock.send("get_all\n".encode("utf-8"))
     data = sock.recv(64000)
 
-    # Program flow:
     try:
         mrubis_state = json.loads(data.decode("utf-8"))
     except JSONDecodeError:
@@ -77,22 +72,19 @@ def get_json_from_java():
         print(data)
         mrubis_state = "not available"
 
-    sock.close()
-
     return mrubis_state
 
-def send_exit():
+def send_exit(sock):
 
-    HOST = "localhost"
-    PORT = 8080
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((HOST, PORT))
-
-    sock.sendall("exit\n".encode("utf-8"))
+    sock.send("exit\n".encode("utf-8"))
     data = sock.recv(64000)
 
     sock.close()
+
+def server_is_ready(sock):
+    sock.send("ready?\n".encode("utf-8"))
+    data = sock.recv(64000)
+    return data.decode("utf-8") == "ready_to_proceed"
 
 
 def main():
@@ -102,24 +94,27 @@ def main():
     if proc.poll is None:
         print('MRUBIS is running')
 
-    sleep(2)
+    HOST = "localhost"
+    PORT = 8080
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    print("Getting first state...")
-    mrubis_state = get_json_from_java()
-    print(mrubis_state)
-    #print("Socket closed")
+    sleep(1)
 
-    sleep(2)
+    sock.connect((HOST, PORT))
 
-    print("Getting second state...")
-    mrubis_state = get_json_from_java()
-    print(mrubis_state)
-    #print("Socket closed")
+    if server_is_ready:
+        print("Getting first state...")
+        mrubis_state = get_json_from_java(sock)
+        print(mrubis_state)
 
-    sleep(2)
+    if server_is_ready:
+        print("Getting second state...")
+        mrubis_state = get_json_from_java(sock)
+        print(mrubis_state)
 
-    send_exit()
-    print('executed exit')
+    if server_is_ready:
+        send_exit(sock)
+        print('executed exit')
 
     proc.terminate()
 
