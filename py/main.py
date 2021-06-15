@@ -96,10 +96,10 @@ def main():
 
     run = 1
     max_runs = 100
-    while run < max_runs:
+    while run <= max_runs:
         print(f"Getting state {run}/100...")
         mrubis_state = get_json_from_java(sock)
-        print(mrubis_state)
+        #print(mrubis_state)
         run += 1
 
     send_exit(sock)
