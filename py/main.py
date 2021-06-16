@@ -81,17 +81,17 @@ def send_exit(sock):
 
 def main():
 
-    proc = initialize_mrubis()
+    java_running_already = False
+    if not java_running_already:
+        proc = initialize_mrubis()
 
-    if proc.poll is None:
-        print('MRUBIS is running')
+        if proc.poll is None:
+           print('MRUBIS is running')
 
     HOST = "localhost"
     PORT = 8080
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
     sleep(1)
-
     sock.connect((HOST, PORT))
 
     run = 1
@@ -99,13 +99,15 @@ def main():
     while run <= max_runs:
         print(f"Getting state {run}/100...")
         mrubis_state = get_json_from_java(sock)
-        #print(mrubis_state)
+        sleep(0.1)
+        print(mrubis_state)
         run += 1
 
     send_exit(sock)
     print('executed exit')
 
-    proc.terminate()
+    if not java_running_already:
+        proc.terminate()
 
 if __name__ == "__main__":
     main()
