@@ -77,7 +77,7 @@ public class Task_1 {
 	public static FileWriter MLValidation = null;
 	
 	
-	private final static int RUNS = 10;//10000; 
+	private final static int RUNS = 10000; 
 
 	private final static String SEP = ",";
 	private final static boolean Log = true;
@@ -239,11 +239,7 @@ public class Task_1 {
 			while (!simulator.isSimulationCompleted()) { // = number of RUNS
 				run++;
 				
-		        logger.println("Right before the try");
-		     
-		        
 				try {
-					logger.println("trying...");
 					String s;			
 					if(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
 						if(s.equals("get_all")) {
