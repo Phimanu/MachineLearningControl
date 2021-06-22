@@ -42,9 +42,6 @@ def component_actions_costs():
 def system_utility():
     #like SUM(components_utility()
 
-def get_shop_id():
-    #shop_id
-
 def get_environment_type():
     #Environment_type
 
@@ -57,6 +54,23 @@ def fix_component():
 def load_model():
     #
 '''
+
+def system_utility(mrubis_state):
+    '''Calculates the utility for the entire system (across shops)'''
+    total_utility = 0
+    for shop_attrs in mrubis_state.values():
+        for comp_attrs in shop_attrs.values():
+            total_utility += float(comp_attrs['component_utility'])
+    return total_utility
+
+def components_utility(mrubis_state, shop_id):
+    component_utilities = {}
+    for comp_attrs in mrubis_state[shop_id].values():
+        component_utilities[comp_attrs['name']] = float(comp_attrs['component_utility'])
+    return component_utilities
+
+def get_shop_id(mrubis_state):
+    return list(mrubis_state.keys())[0]
 
 def get_json_from_java(sock):
 
@@ -100,6 +114,8 @@ def main():
         print(f"Getting state {run}/100...")
         mrubis_state = get_json_from_java(sock)
         sleep(0.1)
+        print(get_shop_id(mrubis_state))
+        print(components_utility(mrubis_state, 'mRUBiS #1'))
         print(mrubis_state)
         run += 1
 
