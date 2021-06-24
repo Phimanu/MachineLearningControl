@@ -21,33 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Observations {
 
-//	private Architecture mRubis;
-//	
-//	public Observations(Architecture mRubisInstance) {
-//		this.mRubis = mRubisInstance;
-//	}
-
-//	public String executionLoop() {
-//		// inject failures
-//		// attach event listener
-//		//loop for RUNS=1
-//		this.mRubis.eAdapters().add(new EventListener());
-//
-//		// set up simulator:
-//		String logFile = null;
-//		boolean logToConsole = false;
-//		ComparchSimulator simulator = ComparchSimulator.FACTORY.createSimulator(Capability.SELF_REPAIR,
-//				this.mRubis, 1, Level.CONFIG, logFile, logToConsole);
-//		//InjectionStrategy strategy = new testTrace
-//		InjectionStrategy strategy = new Trace_1
-//				(simulator.getSupportedIssueTypes(), this.mRubis);
-//		simulator.setInjectionStrategy(strategy);
-//		
-//		//System.out.println(Observations.getComponentsUtility());
-//		return this.getComponentsUtility();
-//	}
-
-
 	public static String getComponentsUtility(Architecture MRUBIS){
 
 
