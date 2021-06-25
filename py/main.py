@@ -3,6 +3,7 @@ import socket
 from json.decoder import JSONDecodeError
 from subprocess import PIPE, Popen
 from time import sleep
+import pandas as pd
 
 def initialize_mrubis():
 
@@ -107,6 +108,7 @@ def main():
 
     run = 1
     max_runs = 100
+    mrubis_states = []
     while run <= max_runs:
         print(f"Getting state {run}/100...")
         mrubis_state = get_json_from_java(sock)
@@ -114,10 +116,20 @@ def main():
         print(get_shop_id(mrubis_state))
         print(components_utility(mrubis_state, 'mRUBiS #1'))
         print(mrubis_state)
+        mrubis_df = pd.DataFrame.from_dict({
+        (i,j): mrubis_state[i][j] 
+            for i in mrubis_state.keys() 
+            for j in mrubis_state[i].keys()},
+        orient='index')
+
+        mrubis_states.append(mrubis_df)
         run += 1
 
     send_exit(sock)
     print('executed exit')
+
+    mrubis_df = pd.concat(mrubis_states)
+    mrubis_df.to_csv('mrubis.csv')
 
     if not java_running_already:
         proc.terminate()
