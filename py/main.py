@@ -31,16 +31,13 @@ def initialize_mrubis():
 
 '''
 def components_status():
-    #Map<Shop_id, Component_type, CF_x, shop_id>
+    #Map<Shop_id, Component_type, CF_x> # does the ID change upon restarting? # issues lists seem to be empty / no comp_utility of 0
 
 def components_utility():
     #Map<Component_type, Map<Param_1, ..., Param_N, Utility, shop_id>
 
 def component_actions_costs():
-    #Map<Component_type, CF_x, Action, cost, shop_id>
-
-def system_utility():
-    #like SUM(components_utility()
+    #Map<Component_type, CF_x, Action, cost, shop_id> # where to retrieve action / cost from on mRUBis side?
 
 def get_environment_type():
     #Environment_type
