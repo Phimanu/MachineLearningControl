@@ -3,11 +3,13 @@ package mRUBiS.Observations;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import java.util.HashMap;
 
 import de.mdelab.morisia.comparch.Architecture;
 import de.mdelab.morisia.comparch.Component;
 import de.mdelab.morisia.comparch.Issue;
+import de.mdelab.morisia.comparch.Rule;
 import de.mdelab.morisia.comparch.Tenant;
 import de.mdelab.morisia.comparch.simulator.Capability;
 import de.mdelab.morisia.comparch.simulator.ComparchSimulator;
@@ -43,10 +45,17 @@ public class Observations {
 		{    
 
 			HashMap<String, String> parameterMap = new HashMap<String, String>();
+			
+			List<Issue> issues = component.getIssues();
+			List<String> failure_names = issues.stream().map( issue -> issue.getClass().getName() ).collect( Collectors.toList() );
+			List<Rule> rules = issues.stream().map( issue -> issue.getHandledBy().get(0) ).collect( Collectors.toList() );
 
 			parameterMap.put("name", component.getType().getName());
 			parameterMap.put("state", component.getState().getName());
 			parameterMap.put("health", String.valueOf(component.getHealthStatus()));
+			parameterMap.put("issues", issues.toString());
+			parameterMap.put("failure_names", failure_names.toString());
+			parameterMap.put("rule", rules.toString());
 			parameterMap.put("adt", String.valueOf(component.getADT()));
 			parameterMap.put("connectivity", String.valueOf(new Double(component.getProvidedInterfaces().size() + component.getRequiredInterfaces().size())));
 			parameterMap.put("importance", String.valueOf(component.getTenant().getImportance()));
