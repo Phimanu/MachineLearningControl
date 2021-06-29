@@ -26,59 +26,62 @@ public class Observations {
 	public static String getComponentsUtility(Architecture MRUBIS){
 
 
-		ArchitectureUtilCal.computeOverallUtility(MRUBIS);
+		//ArchitectureUtilCal.computeOverallUtility(MRUBIS);
 		String json = "";
 
 		for (Tenant shop : MRUBIS.getTenants())
-		{ArchitectureUtilCal.computeShopUtility(shop);
+		{
 
-		shop.getName();
-		shop.getCriticality();
-		shop.getPerformance();
-		shop.getRequest();
+			//ArchitectureUtilCal.computeShopUtility(shop);
+			//shop.getName();
+			//shop.getCriticality();
+			//shop.getPerformance();
+			//shop.getRequest();
 
-		HashMap<String, HashMap<String, HashMap<String, String>>> shopMap = new HashMap<String, HashMap<String, HashMap<String, String>>>();
-		HashMap<String, HashMap<String, String>> componentMap = new HashMap<String, HashMap<String, String>>();
-		shopMap.put(shop.getName(), componentMap);
+			HashMap<String, HashMap<String, HashMap<String, String>>> shopMap = new HashMap<String, HashMap<String, HashMap<String, String>>>();
+			HashMap<String, HashMap<String, String>> componentMap = new HashMap<String, HashMap<String, String>>();
+			shopMap.put(shop.getName(), componentMap);
 
-		for ( Component component : shop.getComponents())
-		{    
+			for ( Component component : shop.getComponents())
+			{    
 
-			HashMap<String, String> parameterMap = new HashMap<String, String>();
-			
-			List<Issue> issues = component.getIssues();
-			List<String> failure_names = issues.stream().map( issue -> issue.getClass().getName() ).collect( Collectors.toList() );
-			List<Rule> rules = issues.stream().map( issue -> issue.getHandledBy().get(0) ).collect( Collectors.toList() );
+				HashMap<String, String> parameterMap = new HashMap<String, String>();
 
-			parameterMap.put("name", component.getType().getName());
-			parameterMap.put("state", component.getState().getName());
-			parameterMap.put("health", String.valueOf(component.getHealthStatus()));
-			parameterMap.put("issues", issues.toString());
-			parameterMap.put("failure_names", failure_names.toString());
-			parameterMap.put("rule", rules.toString());
-			parameterMap.put("adt", String.valueOf(component.getADT()));
-			parameterMap.put("connectivity", String.valueOf(new Double(component.getProvidedInterfaces().size() + component.getRequiredInterfaces().size())));
-			parameterMap.put("importance", String.valueOf(component.getTenant().getImportance()));
-			parameterMap.put("reliability", String.valueOf(component.getType().getReliability()));
-			parameterMap.put("criticality", String.valueOf(component.getType().getCriticality()));
-			parameterMap.put("request", String.valueOf(component.getRequest()));
-			parameterMap.put("sat_point", String.valueOf(component.getType().getSatPoint()));
-			parameterMap.put("replica", String.valueOf(component.getInUseReplica()));
-			parameterMap.put("perf_max", String.valueOf(component.getType().getPerformanceMax()));
-			parameterMap.put("component_utility", String.valueOf(ArchitectureUtilCal.computeComponentUtility(component)));
+				List<Issue> issues = MRUBIS.getAnnotations().getIssues();
+				List<String> failureNames = issues.stream().map( issue -> issue.getClass().getSimpleName().replaceAll("Impl", "") ).collect( Collectors.toList() );
+				List<Rule> rules = issues.stream().map( issue -> issue.getHandledBy().get(0) ).collect( Collectors.toList() );
+				List<String> ruleNames = rules.stream().map( rule -> rule.getClass().getSimpleName().replaceAll("Impl", "") ).collect( Collectors.toList() );
+				List<Double> ruleCosts = rules.stream().map( rule -> rule.getCosts() ).collect( Collectors.toList() );
 
-			componentMap.put(component.getUid() , parameterMap);
+				parameterMap.put("name", component.getType().getName());
+				parameterMap.put("state", component.getState().getName());
+				//parameterMap.put("health", String.valueOf(component.getHealthStatus()));
+				parameterMap.put("failure_names", failureNames.toString());
+				parameterMap.put("rule_names", ruleNames.toString());
+				parameterMap.put("rule_costs", ruleCosts.toString());
+				parameterMap.put("adt", String.valueOf(component.getADT()));
+				parameterMap.put("connectivity", String.valueOf(new Double(component.getProvidedInterfaces().size() + component.getRequiredInterfaces().size())));
+				parameterMap.put("importance", String.valueOf(component.getTenant().getImportance()));
+				parameterMap.put("reliability", String.valueOf(component.getType().getReliability()));
+				parameterMap.put("criticality", String.valueOf(component.getType().getCriticality()));
+				parameterMap.put("request", String.valueOf(component.getRequest()));
+				parameterMap.put("sat_point", String.valueOf(component.getType().getSatPoint()));
+				parameterMap.put("replica", String.valueOf(component.getInUseReplica()));
+				parameterMap.put("perf_max", String.valueOf(component.getType().getPerformanceMax()));
+				parameterMap.put("component_utility", String.valueOf(ArchitectureUtilCal.computeComponentUtility(component)));
 
-		}
+				componentMap.put(component.getUid() , parameterMap);
+
+			}
 
 
-		// https://stackoverflow.com/questions/12155800/how-to-convert-hashmap-to-json-object-in-java
-		try {
-			json = new ObjectMapper().writeValueAsString(shopMap);
-			return json;
-		} catch (JsonProcessingException e) {
-			e.printStackTrace();
-		}
+			// https://stackoverflow.com/questions/12155800/how-to-convert-hashmap-to-json-object-in-java
+			try {
+				json = new ObjectMapper().writeValueAsString(shopMap);
+				return json;
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
+			}
 
 
 		}
