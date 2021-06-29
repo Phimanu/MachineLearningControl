@@ -41,17 +41,20 @@ public class Observations {
 			HashMap<String, HashMap<String, HashMap<String, String>>> shopMap = new HashMap<String, HashMap<String, HashMap<String, String>>>();
 			HashMap<String, HashMap<String, String>> componentMap = new HashMap<String, HashMap<String, String>>();
 			shopMap.put(shop.getName(), componentMap);
+			
+			List<Issue> issues = MRUBIS.getAnnotations().getIssues();
+			List<Component> components = issues.stream().map( issue -> issue.getAffectedComponent() ).collect( Collectors.toList() );
+			List<String> failureNames = issues.stream().map( issue -> issue.getClass().getSimpleName().replaceAll("Impl", "") ).collect( Collectors.toList() );
+			List<Rule> rules = issues.stream().map( issue -> issue.getHandledBy().get(0) ).collect( Collectors.toList() );
+			List<String> ruleNames = rules.stream().map( rule -> rule.getClass().getSimpleName().replaceAll("Impl", "") ).collect( Collectors.toList() );
+			List<Double> ruleCosts = rules.stream().map( rule -> rule.getCosts() ).collect( Collectors.toList() );
 
-			for ( Component component : shop.getComponents())
+			for ( Component component : components)
 			{    
 
 				HashMap<String, String> parameterMap = new HashMap<String, String>();
 
-				List<Issue> issues = MRUBIS.getAnnotations().getIssues();
-				List<String> failureNames = issues.stream().map( issue -> issue.getClass().getSimpleName().replaceAll("Impl", "") ).collect( Collectors.toList() );
-				List<Rule> rules = issues.stream().map( issue -> issue.getHandledBy().get(0) ).collect( Collectors.toList() );
-				List<String> ruleNames = rules.stream().map( rule -> rule.getClass().getSimpleName().replaceAll("Impl", "") ).collect( Collectors.toList() );
-				List<Double> ruleCosts = rules.stream().map( rule -> rule.getCosts() ).collect( Collectors.toList() );
+				//List<Issue> issues = MRUBIS.getAnnotations().getIssues();
 
 				parameterMap.put("name", component.getType().getName());
 				parameterMap.put("state", component.getState().getName());
