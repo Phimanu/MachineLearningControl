@@ -239,36 +239,10 @@ public class Task_1 {
 			while (!simulator.isSimulationCompleted()) { // = number of RUNS
 				run++;
 				
-				try {
-					String s;			
-					if(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
-						if(s.equals("get_all")) {
-							String state = Observations.getComponentsUtility(architecture);
-							out.println(state);
-							logger.println(state);
-						}
-						else {
-							out.println("Received unknown command: " + s);
-						}
-					}
-					if(s.equals("exit")) {
-						logger.println(s);
-						logger.println("closed");
-						out.close();
-						logger.close();
-						server.close();
-						break;
-					}
-					//server.close(); // is this the right place to do this?
-				} catch(Exception e) {
-					e.printStackTrace();
-					break;
-				}
-				
 
 				// call the simulator to inject issues.
 				simulator.injectIssues();
-				
+			
 
 				// if run <= RUNS then the simulator injects issues. As soon as
 				// run > RUNS, the simulator is triggered only once to analyze
@@ -295,6 +269,33 @@ public class Task_1 {
 					// Sorting the failures to address first
 					List<Issue> allIssues = new LinkedList<>();
 					allIssues.addAll(annotations.getIssues());
+					
+					// send current state to the python side
+					try {
+						String s;			
+						if(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
+							if(s.equals("get_all")) {
+								String state = Observations.getComponentsUtility(architecture);
+								out.println(state);
+								logger.println(state);
+							}
+							else {
+								out.println("Received unknown command: " + s);
+							}
+						}
+						if(s.equals("exit")) {
+							logger.println(s);
+							logger.println("closed");
+							out.close();
+							logger.close();
+							server.close();
+							break;
+						}
+						//server.close(); // is this the right place to do this?
+					} catch(Exception e) {
+						e.printStackTrace();
+						break;
+					}
 				
 					
 				 if (CURRENT_APPROACH == Approaches.RANDOM) 
