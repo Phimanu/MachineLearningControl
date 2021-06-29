@@ -130,6 +130,7 @@ def main():
 
     mrubis_df = pd.concat(mrubis_states)
     mrubis_df.to_csv('mrubis.csv')
+    mrubis_df.to_excel('mrubis.xls')
 
     if not java_running_already:
         proc.terminate()
