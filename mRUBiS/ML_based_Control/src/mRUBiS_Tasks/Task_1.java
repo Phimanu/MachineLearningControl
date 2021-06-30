@@ -86,6 +86,8 @@ public class Task_1 {
 
 	private final static String SEP = ",";
 	private final static boolean Log = true;
+	
+	private static HashMap<Issue, List<Rule>> issueToRulesMap = new HashMap<Issue, List<Rule>>();
 
 
 	
@@ -270,22 +272,22 @@ public class Task_1 {
 					 * Plan
 					 */
 					
+					 
+					// Clear out issue / rules map
+					issueToRulesMap = new HashMap<Issue, List<Rule>>();
+					
 					plan(interpreter, annotations, P_CF1, P_CF2, P_CF3, P_CF5);
 					// Sorting the failures to address first
 					List<Issue> allIssues = new LinkedList<>();
 					allIssues.addAll(annotations.getIssues());
 					
 					
-					// get available rules from RuleSelector
-					List<Rule> availableRules = RuleSelector.getAvailableRules();
-					System.out.println(availableRules);
-					
 					// send current state to the python side
 					try {
 						String s;			
 						if(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
 							if(s.equals("get_all")) {
-								String state = Observations.getComponentsUtility(architecture, availableRules);
+								String state = Observations.getComponentsUtility(architecture, issueToRulesMap);
 								out.println(state);
 								logger.println(state);
 							}
@@ -542,7 +544,6 @@ public class Task_1 {
 			Activity P_CF3, Activity P_CF5) throws SDMException {
 		for (Issue issue : annotations.getIssues()) {
 			System.out.print("\n Affected component: " +issue.getAffectedComponent().getType().getName()+"\n");
-			// Get all the applicable Rules
 
 			// System.out.print("\n Next Issue");
 
@@ -584,6 +585,10 @@ public class Task_1 {
 				interpreter.executeActivity(P_CF5, parameters);
 
 			}
+			
+			// Get all the applicable Rules
+			issueToRulesMap.put(issue, RuleSelector.getAvailableRules());
+			System.out.println(issueToRulesMap);
 		}
 	}
 

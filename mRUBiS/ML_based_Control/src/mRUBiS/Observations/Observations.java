@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Observations {
 
-	public static String getComponentsUtility(Architecture MRUBIS, List<Rule> availableRules){
+	public static String getComponentsUtility(Architecture MRUBIS, HashMap<Issue, List<Rule>> issueToRulesMap){
 
 		String json = "";
 
@@ -35,36 +35,35 @@ public class Observations {
 			shopMap.put(shop.getName(), componentMap);
 			
 			List<Issue> issues = MRUBIS.getAnnotations().getIssues();
-			List<Component> affectedComponents = issues.stream().map( issue -> issue.getAffectedComponent() ).collect( Collectors.toList() );
-
-			for ( Component component : affectedComponents)
-			{    
-
+			
+			for ( Issue issue: issues) {
+				
+				Component affectedComponent = issue.getAffectedComponent();
+				String failureName = issue.getClass().getSimpleName().replaceAll("Impl", "");
+				List<Rule> availableRules = issueToRulesMap.get(issue);
+				List<String> availableRuleNames = availableRules.stream().map( rule -> rule.getClass().getSimpleName().replaceAll("Impl", "")).collect( Collectors.toList() );
+				List<String> availableRuleCosts = availableRules.stream().map( rule -> String.valueOf(rule.getCosts())).collect( Collectors.toList() );
+				
 				HashMap<String, String> parameterMap = new HashMap<String, String>();
+				
+				parameterMap.put("name", affectedComponent.getType().getName());
+				parameterMap.put("state", affectedComponent.getState().getName());
+				parameterMap.put("failure_names", failureName.toString());
+				parameterMap.put("rule_names", availableRuleNames.toString());
+				parameterMap.put("rule_costs", availableRuleCosts.toString());
+				parameterMap.put("adt", String.valueOf(affectedComponent.getADT()));
+				parameterMap.put("connectivity", String.valueOf(new Double(affectedComponent.getProvidedInterfaces().size() + affectedComponent.getRequiredInterfaces().size())));
+				parameterMap.put("importance", String.valueOf(affectedComponent.getTenant().getImportance()));
+				parameterMap.put("reliability", String.valueOf(affectedComponent.getType().getReliability()));
+				parameterMap.put("criticality", String.valueOf(affectedComponent.getType().getCriticality()));
+				parameterMap.put("request", String.valueOf(affectedComponent.getRequest()));
+				parameterMap.put("sat_point", String.valueOf(affectedComponent.getType().getSatPoint()));
+				parameterMap.put("replica", String.valueOf(affectedComponent.getInUseReplica()));
+				parameterMap.put("perf_max", String.valueOf(affectedComponent.getType().getPerformanceMax()));
+				parameterMap.put("component_utility", String.valueOf(ArchitectureUtilCal.computeComponentUtility(affectedComponent)));
 
-				List<Issue> issuesWithComponent = component.getIssues();
-				List<String> failureNames = issuesWithComponent.stream().map( issue -> issue.getClass().getSimpleName().replaceAll("Impl", "") ).collect( Collectors.toList() );
-				List<String> ruleNames = availableRules.stream().map( rule -> rule.getClass().getSimpleName().replaceAll("impl", "")).collect( Collectors.toList() );
-				List<String> ruleCosts = availableRules.stream().map( rule -> String.valueOf(rule.getCosts()) ).collect( Collectors.toList() );
-
-				parameterMap.put("name", component.getType().getName());
-				parameterMap.put("state", component.getState().getName());
-				parameterMap.put("failure_names", failureNames.toString());
-				parameterMap.put("rule_names", ruleNames.toString());
-				parameterMap.put("rule_costs", ruleCosts.toString());
-				parameterMap.put("adt", String.valueOf(component.getADT()));
-				parameterMap.put("connectivity", String.valueOf(new Double(component.getProvidedInterfaces().size() + component.getRequiredInterfaces().size())));
-				parameterMap.put("importance", String.valueOf(component.getTenant().getImportance()));
-				parameterMap.put("reliability", String.valueOf(component.getType().getReliability()));
-				parameterMap.put("criticality", String.valueOf(component.getType().getCriticality()));
-				parameterMap.put("request", String.valueOf(component.getRequest()));
-				parameterMap.put("sat_point", String.valueOf(component.getType().getSatPoint()));
-				parameterMap.put("replica", String.valueOf(component.getInUseReplica()));
-				parameterMap.put("perf_max", String.valueOf(component.getType().getPerformanceMax()));
-				parameterMap.put("component_utility", String.valueOf(ArchitectureUtilCal.computeComponentUtility(component)));
-
-				componentMap.put(component.getUid() , parameterMap);
-
+				componentMap.put(affectedComponent.getUid() , parameterMap);
+				
 			}
 
 

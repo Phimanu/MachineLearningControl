@@ -248,9 +248,7 @@ public class UtilityIncreasePredictor {
 			
 		}
 
-		
-		availableRules = issue.getHandledBy();
-		
+		availableRules = issue.getHandledBy();		
 
 	}
 
