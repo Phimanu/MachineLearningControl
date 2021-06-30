@@ -46,7 +46,6 @@ public class Observations {
 				List<String> failureNames = issuesWithComponent.stream().map( issue -> issue.getClass().getSimpleName().replaceAll("Impl", "") ).collect( Collectors.toList() );
 				List<String> ruleNames = availableRules.stream().map( rule -> rule.getClass().getSimpleName().replaceAll("impl", "")).collect( Collectors.toList() );
 				List<String> ruleCosts = availableRules.stream().map( rule -> String.valueOf(rule.getCosts()) ).collect( Collectors.toList() );
-				// todo: provide all available actions here
 
 				parameterMap.put("name", component.getType().getName());
 				parameterMap.put("state", component.getState().getName());
@@ -69,7 +68,6 @@ public class Observations {
 			}
 
 
-			// https://stackoverflow.com/questions/12155800/how-to-convert-hashmap-to-json-object-in-java
 			try {
 				json = new ObjectMapper().writeValueAsString(shopMap);
 				return json;

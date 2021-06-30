@@ -248,28 +248,9 @@ public class UtilityIncreasePredictor {
 			
 		}
 
-//		List<Rule> availableRules = issue.getHandledBy();
-//		HashMap<String, HashMap<String, Double>> issueToRulesMap = new HashMap<String, HashMap<String, Double>>();
-//		HashMap<String, Double> rulesToCostsMap = new HashMap<String, Double>();
-//		for ( Rule rule : availableRules) {
-//			rulesToCostsMap.put(rule.getClass().getSimpleName().replaceAll("Impl", ""), rule.getCosts());
-//		}
-//		issueToRulesMap.put(issue.getClass().getSimpleName().replaceAll("Impl", ""), rulesToCostsMap);
-//		
-//		try {
-//			ObjectMapper mapper = new ObjectMapper();
-//			mapper.writeValue(Paths.get("issueToRulesMap.json").toFile(), issueToRulesMap);
-//		} catch (JsonProcessingException e) {
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
 		
 		availableRules = issue.getHandledBy();
 		
-		// query goes here
-		
-		//System.out.print("\n   C issue is handled by  " + issue.getHandledBy().size() + "rule");
 
 	}
 

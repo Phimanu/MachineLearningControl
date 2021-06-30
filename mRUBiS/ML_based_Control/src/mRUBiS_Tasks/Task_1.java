@@ -275,10 +275,8 @@ public class Task_1 {
 					List<Issue> allIssues = new LinkedList<>();
 					allIssues.addAll(annotations.getIssues());
 					
-					//ObjectMapper mapper = new ObjectMapper();
-				    // convert JSON string to Book object
-					//HashMap<String, HashMap<String, Double>> issueToRulesMap = mapper.readValue(Paths.get("issueToRulesMap.json").toFile(), HashMap.class);
 					
+					// get available rules from RuleSelector
 					List<Rule> availableRules = RuleSelector.getAvailableRules();
 					System.out.println(availableRules);
 					
@@ -303,7 +301,6 @@ public class Task_1 {
 							server.close();
 							break;
 						}
-						//server.close(); // is this the right place to do this?
 					} catch(Exception e) {
 						e.printStackTrace();
 						break;
