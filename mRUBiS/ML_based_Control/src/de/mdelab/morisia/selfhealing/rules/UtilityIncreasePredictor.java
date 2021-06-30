@@ -3,6 +3,8 @@ package de.mdelab.morisia.selfhealing.rules;
 import static org.junit.Assert.assertTrue;
 
 import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -10,6 +12,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.logging.Logger;
+import java.util.HashMap;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.mdelab.morisia.comparch.AddReplica;
 import de.mdelab.morisia.comparch.Architecture;
@@ -31,9 +37,16 @@ public class UtilityIncreasePredictor {
 
 	private final static Logger LOGGER = Logger.getLogger(UtilityIncreasePredictor.class.getName());
 	static long sum_nano_time_P = 0;
+	static List<Rule> availableRules;
 
 	
-/*
+	public static List<Rule> getAvailableRules() {
+			return availableRules;
+	}
+
+
+
+	/*
 	 * OUR APPRAOCH - Calculating Combined Utility Increase
 	 * ===============================================================
 	 */
@@ -235,7 +248,27 @@ public class UtilityIncreasePredictor {
 			
 		}
 
-		List<Rule> listOfRules = issue.getHandledBy();
+//		List<Rule> availableRules = issue.getHandledBy();
+//		HashMap<String, HashMap<String, Double>> issueToRulesMap = new HashMap<String, HashMap<String, Double>>();
+//		HashMap<String, Double> rulesToCostsMap = new HashMap<String, Double>();
+//		for ( Rule rule : availableRules) {
+//			rulesToCostsMap.put(rule.getClass().getSimpleName().replaceAll("Impl", ""), rule.getCosts());
+//		}
+//		issueToRulesMap.put(issue.getClass().getSimpleName().replaceAll("Impl", ""), rulesToCostsMap);
+//		
+//		try {
+//			ObjectMapper mapper = new ObjectMapper();
+//			mapper.writeValue(Paths.get("issueToRulesMap.json").toFile(), issueToRulesMap);
+//		} catch (JsonProcessingException e) {
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+		
+		availableRules = issue.getHandledBy();
+		
+		// query goes here
+		
 		//System.out.print("\n   C issue is handled by  " + issue.getHandledBy().size() + "rule");
 
 	}

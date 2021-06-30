@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Observations {
 
-	public static String getComponentsUtility(Architecture MRUBIS){
+	public static String getComponentsUtility(Architecture MRUBIS, List<Rule> availableRules){
 
 		String json = "";
 
@@ -44,11 +44,15 @@ public class Observations {
 
 				List<Issue> issuesWithComponent = component.getIssues();
 				List<String> failureNames = issuesWithComponent.stream().map( issue -> issue.getClass().getSimpleName().replaceAll("Impl", "") ).collect( Collectors.toList() );
+				List<String> ruleNames = availableRules.stream().map( rule -> rule.getClass().getSimpleName().replaceAll("impl", "")).collect( Collectors.toList() );
+				List<String> ruleCosts = availableRules.stream().map( rule -> String.valueOf(rule.getCosts()) ).collect( Collectors.toList() );
 				// todo: provide all available actions here
 
 				parameterMap.put("name", component.getType().getName());
 				parameterMap.put("state", component.getState().getName());
 				parameterMap.put("failure_names", failureNames.toString());
+				parameterMap.put("rule_names", ruleNames.toString());
+				parameterMap.put("rule_costs", ruleCosts.toString());
 				parameterMap.put("adt", String.valueOf(component.getADT()));
 				parameterMap.put("connectivity", String.valueOf(new Double(component.getProvidedInterfaces().size() + component.getRequiredInterfaces().size())));
 				parameterMap.put("importance", String.valueOf(component.getTenant().getImportance()));

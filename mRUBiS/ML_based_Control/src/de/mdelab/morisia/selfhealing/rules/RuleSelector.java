@@ -35,6 +35,8 @@ public class RuleSelector {
 	private final static Logger LOGGER = Logger.getLogger(RuleSelector.class
 			.getName());
 
+	private static List<Rule> availableRules;
+	
 	/**
 	 * For the given issue, the method removes all rule markers except of one
 	 * from the instance graph. The remaining rule marker is the selected rule
@@ -74,6 +76,8 @@ public class RuleSelector {
 		
 
 		}
+	
+	availableRules = UtilityIncreasePredictor.getAvailableRules();
 		
 	}
 
@@ -82,7 +86,7 @@ public class RuleSelector {
 
 	private static void learningApproach(Issue issue, Utilityfunction uTILITY_FUNCTION) {
 		// read utility increase 
-					//UtilityIncreasePredictor.calculateCombinedUtilityIncrease(issue);
+		UtilityIncreasePredictor.calculateCombinedUtilityIncrease(issue);
 		Input.selectAction(issue);
 		
 	}
@@ -685,6 +689,13 @@ public class RuleSelector {
 
 		//System.out.print("\n selected rule  "+ issue.getHandledBy().get(0)+"\n");
 		//System.out.print("\n size of remaining rules for each issues  "+ issue.getHandledBy().size()+"\n");
+	}
+
+
+
+
+	public static List<Rule> getAvailableRules() {
+		return availableRules;
 	}
 
 

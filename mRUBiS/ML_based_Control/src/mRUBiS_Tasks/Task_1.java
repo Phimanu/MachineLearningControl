@@ -3,11 +3,13 @@ package mRUBiS_Tasks;
 import java.io.FileWriter;
 import java.io.*;
 import java.net.*;
+import java.nio.file.Paths;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -24,6 +26,9 @@ import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.EClassifier;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.mdelab.mlsdm.Activity;
 import de.mdelab.mlsdm.interpreter.MLSDMInterpreter;
@@ -67,9 +72,9 @@ import mRUBiS.Observations.Observations;
 
 public class Task_1 {
 
- // public static Approaches CURRENT_APPROACH = Approaches.Udriven;
-  public static Approaches CURRENT_APPROACH = Approaches.RANDOM;
-  //public static Approaches CURRENT_APPROACH = Approaches.Learning;
+	public static Approaches CURRENT_APPROACH = Approaches.Udriven;
+  //public static Approaches CURRENT_APPROACH = Approaches.RANDOM;
+	//public static Approaches CURRENT_APPROACH = Approaches.Learning;
 	public static Utilityfunction UTILITY_FUNCTION = Utilityfunction.Combined;
 	
 
@@ -270,12 +275,19 @@ public class Task_1 {
 					List<Issue> allIssues = new LinkedList<>();
 					allIssues.addAll(annotations.getIssues());
 					
+					//ObjectMapper mapper = new ObjectMapper();
+				    // convert JSON string to Book object
+					//HashMap<String, HashMap<String, Double>> issueToRulesMap = mapper.readValue(Paths.get("issueToRulesMap.json").toFile(), HashMap.class);
+					
+					List<Rule> availableRules = RuleSelector.getAvailableRules();
+					System.out.println(availableRules);
+					
 					// send current state to the python side
 					try {
 						String s;			
 						if(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
 							if(s.equals("get_all")) {
-								String state = Observations.getComponentsUtility(architecture);
+								String state = Observations.getComponentsUtility(architecture, availableRules);
 								out.println(state);
 								logger.println(state);
 							}
