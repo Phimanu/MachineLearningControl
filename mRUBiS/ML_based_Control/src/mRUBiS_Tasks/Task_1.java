@@ -587,7 +587,7 @@ public class Task_1 {
 			}
 			
 			// Get all the applicable Rules
-			issueToRulesMap.put(issue, RuleSelector.getAvailableRules());
+			issueToRulesMap.put(issue, UtilityIncreasePredictor.getAvailableRules());
 			System.out.println(issueToRulesMap);
 		}
 	}

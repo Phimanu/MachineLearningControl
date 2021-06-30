@@ -34,8 +34,6 @@ public class RuleSelector {
 
 	private final static Logger LOGGER = Logger.getLogger(RuleSelector.class
 			.getName());
-
-	private static List<Rule> availableRules;
 	
 	/**
 	 * For the given issue, the method removes all rule markers except of one
@@ -76,8 +74,6 @@ public class RuleSelector {
 		
 
 		}
-	
-	availableRules = UtilityIncreasePredictor.getAvailableRules();
 		
 	}
 
@@ -689,13 +685,6 @@ public class RuleSelector {
 
 		//System.out.print("\n selected rule  "+ issue.getHandledBy().get(0)+"\n");
 		//System.out.print("\n size of remaining rules for each issues  "+ issue.getHandledBy().size()+"\n");
-	}
-
-
-
-
-	public static List<Rule> getAvailableRules() {
-		return availableRules;
 	}
 
 
