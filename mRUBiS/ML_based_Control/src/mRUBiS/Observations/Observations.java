@@ -25,43 +25,30 @@ public class Observations {
 
 	public static String getComponentsUtility(Architecture MRUBIS){
 
-
-		//ArchitectureUtilCal.computeOverallUtility(MRUBIS);
 		String json = "";
 
 		for (Tenant shop : MRUBIS.getTenants())
 		{
-
-			//ArchitectureUtilCal.computeShopUtility(shop);
-			//shop.getName();
-			//shop.getCriticality();
-			//shop.getPerformance();
-			//shop.getRequest();
 
 			HashMap<String, HashMap<String, HashMap<String, String>>> shopMap = new HashMap<String, HashMap<String, HashMap<String, String>>>();
 			HashMap<String, HashMap<String, String>> componentMap = new HashMap<String, HashMap<String, String>>();
 			shopMap.put(shop.getName(), componentMap);
 			
 			List<Issue> issues = MRUBIS.getAnnotations().getIssues();
-			List<Component> components = issues.stream().map( issue -> issue.getAffectedComponent() ).collect( Collectors.toList() );
-			List<String> failureNames = issues.stream().map( issue -> issue.getClass().getSimpleName().replaceAll("Impl", "") ).collect( Collectors.toList() );
-			List<Rule> rules = issues.stream().map( issue -> issue.getHandledBy().get(0) ).collect( Collectors.toList() );
-			List<String> ruleNames = rules.stream().map( rule -> rule.getClass().getSimpleName().replaceAll("Impl", "") ).collect( Collectors.toList() );
-			List<Double> ruleCosts = rules.stream().map( rule -> rule.getCosts() ).collect( Collectors.toList() );
+			List<Component> affectedComponents = issues.stream().map( issue -> issue.getAffectedComponent() ).collect( Collectors.toList() );
 
-			for ( Component component : components)
+			for ( Component component : affectedComponents)
 			{    
 
 				HashMap<String, String> parameterMap = new HashMap<String, String>();
 
-				//List<Issue> issues = MRUBIS.getAnnotations().getIssues();
+				List<Issue> issuesWithComponent = component.getIssues();
+				List<String> failureNames = issuesWithComponent.stream().map( issue -> issue.getClass().getSimpleName().replaceAll("Impl", "") ).collect( Collectors.toList() );
+				// todo: provide all available actions here
 
 				parameterMap.put("name", component.getType().getName());
 				parameterMap.put("state", component.getState().getName());
-				//parameterMap.put("health", String.valueOf(component.getHealthStatus()));
 				parameterMap.put("failure_names", failureNames.toString());
-				parameterMap.put("rule_names", ruleNames.toString());
-				parameterMap.put("rule_costs", ruleCosts.toString());
 				parameterMap.put("adt", String.valueOf(component.getADT()));
 				parameterMap.put("connectivity", String.valueOf(new Double(component.getProvidedInterfaces().size() + component.getRequiredInterfaces().size())));
 				parameterMap.put("importance", String.valueOf(component.getTenant().getImportance()));
