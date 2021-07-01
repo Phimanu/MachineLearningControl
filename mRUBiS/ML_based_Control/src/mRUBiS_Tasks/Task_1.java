@@ -272,8 +272,42 @@ public class Task_1 {
 					 */
 					
 					 
-					// Clear out issue / rules map
-					//issueToRulesMap = new HashMap<Issue, List<Rule>>();
+					
+//					 // Make sure that any old json is deleted
+//					 Path jsonPathRulesToExecute= Paths.get("rulesToExecute.json");
+//					 try {
+//						 Files.delete(jsonPathRulesToExecute);
+//					 } catch (Exception NoSuchFileException) {
+//						 continue;
+//					 }
+//					 
+//					
+//					 // Get the rules to execute from the python side (decision based on previous state)
+//					 if (run>1) { 
+//						 try {
+//							 String s;			
+//							 if(((s = in.readLine()) != null) && (s.equals("exit") == false) && (s.equals("get_all") == false)) {
+//
+//								 HashMap<String, String> rulesToExecute = new HashMap<String, String>();
+//								 	
+//								 ObjectMapper fromPythonMapper = new ObjectMapper();
+//								 rulesToExecute = new ObjectMapper().readValue(s, HashMap.class);
+//								 System.out.println(rulesToExecute);
+//								 fromPythonMapper.writeValue(jsonPathRulesToExecute.toFile(), rulesToExecute);
+//								 out.println("rules_received");
+//								 logger.println(rulesToExecute);
+//
+//							 }
+//							 else {
+//								 out.println("Received unknown command: " + s);
+//							 }
+//						 } catch(Exception e) {
+//							 e.printStackTrace();
+//							 break;
+//						 }
+//					  }
+					 
+					 
 					
 					plan(interpreter, annotations, P_CF1, P_CF2, P_CF3, P_CF5);
 					// Sorting the failures to address first
