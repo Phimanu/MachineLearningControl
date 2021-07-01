@@ -3,6 +3,8 @@ package mRUBiS_Tasks;
 import java.io.FileWriter;
 import java.io.*;
 import java.net.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -86,9 +88,6 @@ public class Task_1 {
 
 	private final static String SEP = ",";
 	private final static boolean Log = true;
-	
-	private static HashMap<Issue, List<Rule>> issueToRulesMap = new HashMap<Issue, List<Rule>>();
-
 
 	
 	
@@ -274,12 +273,20 @@ public class Task_1 {
 					
 					 
 					// Clear out issue / rules map
-					issueToRulesMap = new HashMap<Issue, List<Rule>>();
+					//issueToRulesMap = new HashMap<Issue, List<Rule>>();
 					
 					plan(interpreter, annotations, P_CF1, P_CF2, P_CF3, P_CF5);
 					// Sorting the failures to address first
 					List<Issue> allIssues = new LinkedList<>();
 					allIssues.addAll(annotations.getIssues());
+					
+					// Read json file generated in UtilityIncreasePredictor
+					ObjectMapper mapper = new ObjectMapper();
+					Path jsonPath = Paths.get("issueToRulesMap.json");
+					HashMap<String, HashMap<String, Double>> issueToRulesMapFromFile = mapper.readValue(jsonPath.toFile(), HashMap.class);
+					
+					// Delete file before the next run
+					Files.delete(jsonPath);
 					
 					
 					// send current state to the python side
@@ -287,7 +294,7 @@ public class Task_1 {
 						String s;			
 						if(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
 							if(s.equals("get_all")) {
-								String state = Observations.getComponentsUtility(architecture, issueToRulesMap);
+								String state = Observations.getComponentsUtility(architecture, issueToRulesMapFromFile);
 								out.println(state);
 								logger.println(state);
 							}
@@ -586,9 +593,6 @@ public class Task_1 {
 
 			}
 			
-			// Get all the applicable Rules
-			issueToRulesMap.put(issue, UtilityIncreasePredictor.getAvailableRules());
-			System.out.println(issueToRulesMap);
 		}
 	}
 

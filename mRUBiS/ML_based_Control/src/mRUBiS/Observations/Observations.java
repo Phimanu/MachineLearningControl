@@ -2,6 +2,7 @@ package mRUBiS.Observations;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.HashMap;
@@ -23,7 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Observations {
 
-	public static String getComponentsUtility(Architecture MRUBIS, HashMap<Issue, List<Rule>> issueToRulesMap){
+	public static String getComponentsUtility(Architecture MRUBIS, HashMap<String, HashMap<String, Double>> issuesToRulesMap){
 
 		String json = "";
 
@@ -40,9 +41,9 @@ public class Observations {
 				
 				Component affectedComponent = issue.getAffectedComponent();
 				String failureName = issue.getClass().getSimpleName().replaceAll("Impl", "");
-				List<Rule> availableRules = issueToRulesMap.get(issue);
-				List<String> availableRuleNames = availableRules.stream().map( rule -> rule.getClass().getSimpleName().replaceAll("Impl", "")).collect( Collectors.toList() );
-				List<String> availableRuleCosts = availableRules.stream().map( rule -> String.valueOf(rule.getCosts())).collect( Collectors.toList() );
+				HashMap<String, Double> availableRules = issuesToRulesMap.get(failureName);
+				Set<String> availableRuleNames = availableRules.keySet();
+				List<String> availableRuleCosts = availableRules.values().stream().map( cost -> String.valueOf(cost) ).collect( Collectors.toList() );
 				
 				HashMap<String, String> parameterMap = new HashMap<String, String>();
 				
