@@ -68,6 +68,7 @@ class MRubisController():
         self.run_counter = 0
         self.mrubis_state = {}
         self.mrubis_state_history = []
+        self.available_actions = {}
         self.socket = None
         self.mrubis_process = None
 
@@ -103,12 +104,46 @@ class MRubisController():
 
         return mrubis_state
 
+    def _get_available_rules(self):
+        for shop, shop_components in self.mrubis_state.items():
+            self.available_actions[shop] = {}
+            for component_uid, component_params in shop_components.items():
+                if component_params.get('failure_names'):
+                    comp = shop_components[component_uid]
+                    issue = comp['failure_names']
+                    actions = comp['rule_names'].strip('[]').split(',')
+                    costs = comp['rule_costs'].strip('[]').split(',')
+                    self.available_actions[shop][issue] = {action:cost for action, cost in zip(actions, costs)}
+
+    def _pick_first_available_action(self):
+        actions_to_take = {}
+        for shop, issue_to_action_map in self.available_actions.items():
+            actions_to_take[shop] = {}
+            for issue, action_to_cost_map in issue_to_action_map.items():
+                actions_to_take[shop][issue] = list(action_to_cost_map.keys())[0]
+        return actions_to_take
+
+    def _send_action_to_execute(self, issue_to_action_map):
+        self.socket.send(json.dumps(issue_to_action_map).encode("utf-8") + '\n')
+        data = self.socket.recv(64000)
+        if data.decode('utf-8') == 'rules_received':
+            print('Action transmitted successfully')
+
     def _send_exit_message(self):
         self.socket.send("exit\n".encode("utf-8"))
         data = self.socket.recv(64000)
 
     def _close_socket(self):
         self.socket.close()
+
+    def _append_current_state_to_history(self):
+        mrubis_df = pd.DataFrame.from_dict({
+            (i,j): self.mrubis_state[i][j] 
+                for i in self.mrubis_state.keys() 
+                for j in self.mrubis_state[i].keys()},
+            orient='index')
+
+        self.mrubis_state_history.append(mrubis_df)
 
     def _write_state_history_to_disk(self, filename='mrubis'):
         mrubis_df = pd.concat(self.mrubis_state_history, keys=range(len(self.mrubis_state_history)))
@@ -149,16 +184,15 @@ class MRubisController():
                 self._parse_initial_state(incoming_state)
             else:
                 self._update_current_state_with_new_issues(incoming_state)
-            print(get_shop_id(incoming_state))
-            print(components_utility(incoming_state, 'mRUBiS #1'))
-            print(incoming_state)
-            mrubis_df = pd.DataFrame.from_dict({
-            (i,j): self.mrubis_state[i][j] 
-                for i in self.mrubis_state.keys() 
-                for j in self.mrubis_state[i].keys()},
-            orient='index')
+                self._get_available_rules()
+                print(f'Available Rules: {self.available_actions}')
+                print(f'Picked first rule: {self._pick_first_available_action()}')
+            
+            #print(get_shop_id(incoming_state))
+            #print(components_utility(incoming_state, 'mRUBiS #1'))
+            #print(incoming_state)
 
-            self.mrubis_state_history.append(mrubis_df)
+            self._append_current_state_to_history()
 
         self._send_exit_message()
         self._close_socket()
