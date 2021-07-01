@@ -5,31 +5,6 @@ from subprocess import PIPE, Popen
 from time import sleep
 import pandas as pd
 
-def initialize_mrubis():
-
-    # Put your command line here (In Eclipse: Run -> Run Configurations... -> Show Command Line)
-    with open('path.json', 'r') as f:
-        variable_paths = json.load(f)
-
-    args = [
-        variable_paths['java_path'],
-        '-DFile.encoding=UTF-8',
-        '-classpath',
-        variable_paths['dependency_paths'],
-        '-XX:+ShowCodeDetailsInExceptionMessages',
-        'mRUBiS_Tasks.Task_1',
-    ]
-
-    pipe = Popen(
-         args, 
-         stdin=PIPE, 
-         stdout=PIPE, 
-         shell=False,
-         cwd="../mRUBiS/ML_based_Control"
-    )
-
-    return pipe
-
 '''
 def components_status():
     #Map<Shop_id, Component_type, CF_x> # does the ID change upon restarting? # issues lists seem to be empty / no comp_utility of 0
@@ -38,7 +13,7 @@ def components_utility():
     #Map<Component_type, Map<Param_1, ..., Param_N, Utility, shop_id>
 
 def component_actions_costs():
-    #Map<Component_type, CF_x, Action, cost, shop_id> # where to retrieve action / cost from on mRUBis side?
+    #Map<Component_type, CF_x, Action, cost, shop_id>
 
 def get_environment_type():
     #Environment_type
@@ -70,70 +45,109 @@ def components_utility(mrubis_state, shop_id):
 def get_shop_id(mrubis_state):
     return list(mrubis_state.keys())[0]
 
-def get_json_from_java(sock):
+class MRubisController():
 
-    sock.send("get_all\n".encode("utf-8"))
-    data = sock.recv(64000)
+    def __init__(self, host='localhost', port=8080, json_path='path.json') -> None:
 
-    try:
-        mrubis_state = json.loads(data.decode("utf-8"))
-    except JSONDecodeError:
-        print("Could not decode JSON input, received this:")
-        print(data)
-        mrubis_state = "not available"
+        # Put your command line here (In Eclipse: Run -> Run Configurations... -> Show Command Line)
+        with open(json_path, 'r') as f:
+            variable_paths = json.load(f)
 
-    return mrubis_state
+        self.host=host
+        self.port=port
 
-def send_exit(sock):
+        self.launch_args = [
+            variable_paths['java_path'],
+            '-DFile.encoding=UTF-8',
+            '-classpath',
+            variable_paths['dependency_paths'],
+            '-XX:+ShowCodeDetailsInExceptionMessages',
+            'mRUBiS_Tasks.Task_1',
+        ]
 
-    sock.send("exit\n".encode("utf-8"))
-    data = sock.recv(64000)
+        self.run_counter = 0
+        self.mrubis_state = {}
+        self.mrubis_state_history = []
+        self.socket = None
+        self.mrubis_process = None
 
-    sock.close()
+    def _start_mrubis(self):
+        self.mrubis_process = Popen(
+            self.launch_args, 
+            stdin=PIPE, 
+            stdout=PIPE, 
+            shell=False,
+            cwd="../mRUBiS/ML_based_Control"
+        )
 
-def main():
+    def _stop_mrubis(self):
+        self.mrubis_process.terminate()
 
-    java_running_already = False
-    if not java_running_already:
-        proc = initialize_mrubis()
+    def _connect_to_java(self):
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sleep(1)
+        self.socket.connect((self.host, self.port))
+        print('Connected to the Java side.')
 
-        if proc.poll is None:
-           print('MRUBIS is running')
+    def _get_mrubis_state(self):
 
-    HOST = "localhost"
-    PORT = 8080
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sleep(1)
-    sock.connect((HOST, PORT))
+        self.socket.send("get_all\n".encode("utf-8"))
+        data = self.socket.recv(64000)
 
-    run = 1
-    max_runs = 100
-    mrubis_states = []
-    while run <= max_runs:
-        print(f"Getting state {run}/100...")
-        mrubis_state = get_json_from_java(sock)
-        sleep(0.1)
-        print(get_shop_id(mrubis_state))
-        print(components_utility(mrubis_state, 'mRUBiS #1'))
-        print(mrubis_state)
-        mrubis_df = pd.DataFrame.from_dict({
-        (i,j): mrubis_state[i][j] 
-            for i in mrubis_state.keys() 
-            for j in mrubis_state[i].keys()},
-        orient='index')
+        try:
+            mrubis_state = json.loads(data.decode("utf-8"))
+        except JSONDecodeError:
+            print("Could not decode JSON input, received this:")
+            print(data)
+            mrubis_state = "not available"
 
-        mrubis_states.append(mrubis_df)
-        run += 1
+        return mrubis_state
 
-    send_exit(sock)
-    print('executed exit')
+    def _send_exit_message(self):
+        self.socket.send("exit\n".encode("utf-8"))
+        data = self.socket.recv(64000)
 
-    mrubis_df = pd.concat(mrubis_states)
-    mrubis_df.to_csv('mrubis.csv')
-    mrubis_df.to_excel('mrubis.xls')
+    def _close_socket(self):
+        self.socket.close()
 
-    if not java_running_already:
-        proc.terminate()
+    def _write_state_history_to_disk(self, filename='mrubis'):
+        mrubis_df = pd.concat(self.mrubis_state_history)
+        mrubis_df.to_csv(f'{filename}.csv')
+        mrubis_df.to_excel(f'{filename}.xls')
+
+    def run(self, external_start=False, max_runs=100):
+
+        if not external_start:
+            self._start_mrubis()
+            if self.mrubis_process.poll is None:
+                print('MRUBIS is running')
+
+        self._connect_to_java()
+        
+        while self.run_counter < max_runs:
+            self.run_counter += 1
+            print(f"Getting state {self.run_counter}/{max_runs}...")
+            self.mrubis_state = self._get_mrubis_state()
+            sleep(0.1)
+            print(get_shop_id(self.mrubis_state))
+            print(components_utility(self.mrubis_state, 'mRUBiS #1'))
+            print(self.mrubis_state)
+            mrubis_df = pd.DataFrame.from_dict({
+            (i,j): self.mrubis_state[i][j] 
+                for i in self.mrubis_state.keys() 
+                for j in self.mrubis_state[i].keys()},
+            orient='index')
+
+            self.mrubis_state_history.append(mrubis_df)
+
+        self._send_exit_message()
+        self._close_socket()
+
+        if not external_start:
+            self._stop_mrubis()
+
+        self._write_state_history_to_disk()
 
 if __name__ == "__main__":
-    main()
+    controller = MRubisController()
+    controller.run(external_start=False, max_runs=100)
