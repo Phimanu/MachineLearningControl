@@ -288,13 +288,18 @@ public class Task_1 {
 					// Delete file before the next run
 					Files.delete(jsonPath);
 					
-					
 					// send current state to the python side
 					try {
 						String s;			
 						if(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
 							if(s.equals("get_all")) {
-								String state = Observations.getComponentsUtility(architecture, issueToRulesMapFromFile);
+								String state = "";
+								if (run==1) {
+									state = Observations.getInitialState(architecture);
+								}
+								else {
+									state = Observations.getComponentsUtility(architecture, issueToRulesMapFromFile);
+								}
 								out.println(state);
 								logger.println(state);
 							}

@@ -24,29 +24,70 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Observations {
 
+	public static String getInitialState(Architecture MRUBIS) {
+		String json = "";
+
+		HashMap<String, HashMap<String, HashMap<String, String>>> shopMap = new HashMap<String, HashMap<String, HashMap<String, String>>>();
+
+		for (Tenant shop : MRUBIS.getTenants())
+		{
+			HashMap<String, HashMap<String, String>> componentMap = new HashMap<String, HashMap<String, String>>();
+			shopMap.put(shop.getName(), componentMap);
+
+			for (Component component: shop.getComponents()) {
+				
+				HashMap<String, String> parameterMap = new HashMap<String, String>();
+				parameterMap.put("name", component.getType().getName());
+				parameterMap.put("state", component.getState().getName());
+				parameterMap.put("adt", String.valueOf(component.getADT()));
+				parameterMap.put("connectivity", String.valueOf(new Double(component.getProvidedInterfaces().size() + component.getRequiredInterfaces().size())));
+				parameterMap.put("importance", String.valueOf(component.getTenant().getImportance()));
+				parameterMap.put("reliability", String.valueOf(component.getType().getReliability()));
+				parameterMap.put("criticality", String.valueOf(component.getType().getCriticality()));
+				parameterMap.put("request", String.valueOf(component.getRequest()));
+				parameterMap.put("sat_point", String.valueOf(component.getType().getSatPoint()));
+				parameterMap.put("replica", String.valueOf(component.getInUseReplica()));
+				parameterMap.put("perf_max", String.valueOf(component.getType().getPerformanceMax()));
+				parameterMap.put("component_utility", String.valueOf(ArchitectureUtilCal.computeComponentUtility(component)));
+				componentMap.put(component.getUid() , parameterMap);
+			}
+		}
+
+		try {
+			json = new ObjectMapper().writeValueAsString(shopMap);
+			return json;
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+
+		return json;
+
+	}
+
 	public static String getComponentsUtility(Architecture MRUBIS, HashMap<String, HashMap<String, Double>> issuesToRulesMap){
 
 		String json = "";
 
+		HashMap<String, HashMap<String, HashMap<String, String>>> shopMap = new HashMap<String, HashMap<String, HashMap<String, String>>>();
+
 		for (Tenant shop : MRUBIS.getTenants())
 		{
 
-			HashMap<String, HashMap<String, HashMap<String, String>>> shopMap = new HashMap<String, HashMap<String, HashMap<String, String>>>();
 			HashMap<String, HashMap<String, String>> componentMap = new HashMap<String, HashMap<String, String>>();
 			shopMap.put(shop.getName(), componentMap);
-			
+
 			List<Issue> issues = MRUBIS.getAnnotations().getIssues();
-			
+
 			for ( Issue issue: issues) {
-				
+
 				Component affectedComponent = issue.getAffectedComponent();
 				String failureName = issue.getClass().getSimpleName().replaceAll("Impl", "");
 				HashMap<String, Double> availableRules = issuesToRulesMap.get(failureName);
 				Set<String> availableRuleNames = availableRules.keySet();
 				List<String> availableRuleCosts = availableRules.values().stream().map( cost -> String.valueOf(cost) ).collect( Collectors.toList() );
-				
+
 				HashMap<String, String> parameterMap = new HashMap<String, String>();
-				
+
 				parameterMap.put("name", affectedComponent.getType().getName());
 				parameterMap.put("state", affectedComponent.getState().getName());
 				parameterMap.put("failure_names", failureName.toString());
@@ -64,7 +105,7 @@ public class Observations {
 				parameterMap.put("component_utility", String.valueOf(ArchitectureUtilCal.computeComponentUtility(affectedComponent)));
 
 				componentMap.put(affectedComponent.getUid() , parameterMap);
-				
+
 			}
 
 
