@@ -68,7 +68,7 @@ class MRubisController():
         self.run_counter = 0
         self.mrubis_state = {}
         self.mrubis_state_history = []
-        self.available_actions = {}
+        self.available_rules = {}
         self.socket = None
         self.mrubis_process = None
 
@@ -106,28 +106,28 @@ class MRubisController():
 
     def _get_available_rules(self):
         for shop, shop_components in self.mrubis_state.items():
-            self.available_actions[shop] = {}
+            self.available_rules[shop] = {}
             for component_uid, component_params in shop_components.items():
                 if component_params.get('failure_names'):
                     comp = shop_components[component_uid]
                     issue = comp['failure_names']
-                    actions = comp['rule_names'].strip('[]').split(',')
+                    rules = comp['rule_names'].strip('[]').split(',')
                     costs = comp['rule_costs'].strip('[]').split(',')
-                    self.available_actions[shop][issue] = {action:cost for action, cost in zip(actions, costs)}
+                    self.available_rules[shop][issue] = {rule:cost for rule, cost in zip(rules, costs)}
 
-    def _pick_first_available_action(self):
-        actions_to_take = {}
-        for shop, issue_to_action_map in self.available_actions.items():
-            actions_to_take[shop] = {}
-            for issue, action_to_cost_map in issue_to_action_map.items():
-                actions_to_take[shop][issue] = list(action_to_cost_map.keys())[0]
-        return actions_to_take
+    def _pick_first_available_rule(self):
+        rules_to_execute = {}
+        for shop, issue_to_rule_map in self.available_rules.items():
+            rules_to_execute[shop] = {}
+            for issue, rule_to_cost_map in issue_to_rule_map.items():
+                rules_to_execute[shop][issue] = list(rule_to_cost_map.keys())[0]
+        return rules_to_execute
 
-    def _send_action_to_execute(self, issue_to_action_map):
-        self.socket.send(json.dumps(issue_to_action_map).encode("utf-8") + '\n')
+    def _send_rules_to_execute(self, issue_to_rule_map):
+        self.socket.send(json.dumps(issue_to_rule_map).encode("utf-8") + '\n')
         data = self.socket.recv(64000)
         if data.decode('utf-8') == 'rules_received':
-            print('Action transmitted successfully')
+            print('Rules transmitted successfully')
 
     def _send_exit_message(self):
         self.socket.send("exit\n".encode("utf-8"))
@@ -185,8 +185,11 @@ class MRubisController():
             else:
                 self._update_current_state_with_new_issues(incoming_state)
                 self._get_available_rules()
-                print(f'Available Rules: {self.available_actions}')
-                print(f'Picked first rule: {self._pick_first_available_action()}')
+                
+                print(f'Available Rules: {self.available_rules}')
+                picked_rules = self._pick_first_available_rule()
+                print(f'Picked first rule: {picked_rules}')
+                #self._send_rules_to_execute(picked_rules)
             
             #print(get_shop_id(incoming_state))
             #print(components_utility(incoming_state, 'mRUBiS #1'))
