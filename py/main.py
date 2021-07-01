@@ -111,9 +111,25 @@ class MRubisController():
         self.socket.close()
 
     def _write_state_history_to_disk(self, filename='mrubis'):
-        mrubis_df = pd.concat(self.mrubis_state_history)
+        mrubis_df = pd.concat(self.mrubis_state_history, keys=range(len(self.mrubis_state_history)))
         mrubis_df.to_csv(f'{filename}.csv')
         mrubis_df.to_excel(f'{filename}.xls')
+
+    def _parse_initial_state(self, initial_state):
+        for shop, shop_components in initial_state.items():
+            self.mrubis_state[shop] = {}
+            for component_uid, component_params in shop_components.items():
+                self.mrubis_state[shop][component_uid] = {}
+                for param, value in component_params.items():
+                    self.mrubis_state[shop][component_uid][param] = value
+
+    def _update_current_state_with_new_issues(self, incoming_state):
+        for shop, shop_components in incoming_state.items():
+            for component_uid, component_params in shop_components.items():
+                if component_uid not in self.mrubis_state[shop].keys():
+                    self.mrubis_state[shop][component_uid] = {}
+                for param, value in component_params.items():
+                    self.mrubis_state[shop][component_uid][param] = value
 
     def run(self, external_start=False, max_runs=100):
 
@@ -127,11 +143,15 @@ class MRubisController():
         while self.run_counter < max_runs:
             self.run_counter += 1
             print(f"Getting state {self.run_counter}/{max_runs}...")
-            self.mrubis_state = self._get_mrubis_state()
+            incoming_state = self._get_mrubis_state()
             sleep(0.1)
-            print(get_shop_id(self.mrubis_state))
-            print(components_utility(self.mrubis_state, 'mRUBiS #1'))
-            print(self.mrubis_state)
+            if self.run_counter == 1:
+                self._parse_initial_state(incoming_state)
+            else:
+                self._update_current_state_with_new_issues(incoming_state)
+            print(get_shop_id(incoming_state))
+            print(components_utility(incoming_state, 'mRUBiS #1'))
+            print(incoming_state)
             mrubis_df = pd.DataFrame.from_dict({
             (i,j): self.mrubis_state[i][j] 
                 for i in self.mrubis_state.keys() 
