@@ -104,7 +104,7 @@ class MRubisController():
 
         return mrubis_state
 
-    def _get_available_rules(self):
+    def _identify_available_rules(self):
         for shop, shop_components in self.mrubis_state.items():
             self.available_rules[shop] = {}
             for component_uid, component_params in shop_components.items():
@@ -114,19 +114,39 @@ class MRubisController():
                     rules = comp['rule_names'].strip('[]').split(',')
                     costs = comp['rule_costs'].strip('[]').split(',')
                     self.available_rules[shop][issue] = {rule:cost for rule, cost in zip(rules, costs)}
+    
+    def _print_rules(self, rules_map=None):
+        if rules_map is None:
+            rules_map = self.available_rules
+        for shop, issue_to_rule_map in rules_map.items():
+            print(f"Shop: {shop}:")
+            if isinstance(issue_to_rule_map, dict):
+                for issue, rule_to_cost_map in issue_to_rule_map.items():
+                    print(f"    Issue: {issue}")
+                    if isinstance(rule_to_cost_map, dict):
+                        for rule, cost in rule_to_cost_map.items():
+                            print(f"        Rule: {rule} (cost: {cost})")
+                    else:
+                        print(f"        Rule: {rule_to_cost_map}")
+            else:
+                print(f"     {rules_map[shop]}")
 
     def _pick_first_available_rule(self):
         rules_to_execute = {}
         for shop, issue_to_rule_map in self.available_rules.items():
             rules_to_execute[shop] = {}
-            for issue, rule_to_cost_map in issue_to_rule_map.items():
-                rules_to_execute[shop][issue] = list(rule_to_cost_map.keys())[0]
+            if issue_to_rule_map:
+                for issue, rule_to_cost_map in issue_to_rule_map.items():
+                    picked_rule_name = list(rule_to_cost_map.keys())[0]
+                    rules_to_execute[shop][issue] = picked_rule_name
+            else:
+                rules_to_execute[shop] = 'No issues'
         return rules_to_execute
 
     def _send_rules_to_execute(self, issue_to_rule_map):
-        self.socket.send(json.dumps(issue_to_rule_map).encode("utf-8") + '\n')
+        self.socket.send((json.dumps(issue_to_rule_map)  + '\n').encode("utf-8"))
         data = self.socket.recv(64000)
-        if data.decode('utf-8') == 'rules_received':
+        if data.decode('utf-8').strip() == 'rules_received':
             print('Rules transmitted successfully')
 
     def _send_exit_message(self):
@@ -177,24 +197,26 @@ class MRubisController():
         
         while self.run_counter < max_runs:
             self.run_counter += 1
+            sleep(0.1)
+
+            if self.run_counter > 1:
+                self._identify_available_rules()
+                print("Available rules:")
+                self._print_rules()
+                picked_rules = self._pick_first_available_rule()
+                print(f"Chosen rule:")
+                self._print_rules(picked_rules)
+                self._send_rules_to_execute(picked_rules)
+
             print(f"Getting state {self.run_counter}/{max_runs}...")
             incoming_state = self._get_mrubis_state()
-            sleep(0.1)
+
             if self.run_counter == 1:
                 self._parse_initial_state(incoming_state)
-            else:
-                self._update_current_state_with_new_issues(incoming_state)
-                self._get_available_rules()
-                
-                print(f'Available Rules: {self.available_rules}')
-                picked_rules = self._pick_first_available_rule()
-                print(f'Picked first rule: {picked_rules}')
-                #self._send_rules_to_execute(picked_rules)
-            
-            #print(get_shop_id(incoming_state))
-            #print(components_utility(incoming_state, 'mRUBiS #1'))
-            #print(incoming_state)
+                print('Received the initial mRUBIS state.')
+                print(incoming_state)
 
+            self._update_current_state_with_new_issues(incoming_state)
             self._append_current_state_to_history()
 
         self._send_exit_message()

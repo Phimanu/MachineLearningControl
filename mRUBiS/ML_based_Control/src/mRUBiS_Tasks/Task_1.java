@@ -273,39 +273,45 @@ public class Task_1 {
 					
 					 
 					
-//					 // Make sure that any old json is deleted
-//					 Path jsonPathRulesToExecute= Paths.get("rulesToExecute.json");
-//					 try {
-//						 Files.delete(jsonPathRulesToExecute);
-//					 } catch (Exception NoSuchFileException) {
-//						 continue;
-//					 }
-//					 
-//					
-//					 // Get the rules to execute from the python side (decision based on previous state)
-//					 if (run>1) { 
-//						 try {
-//							 String s;			
-//							 if(((s = in.readLine()) != null) && (s.equals("exit") == false) && (s.equals("get_all") == false)) {
-//
-//								 HashMap<String, String> rulesToExecute = new HashMap<String, String>();
-//								 	
-//								 ObjectMapper fromPythonMapper = new ObjectMapper();
-//								 rulesToExecute = new ObjectMapper().readValue(s, HashMap.class);
-//								 System.out.println(rulesToExecute);
-//								 fromPythonMapper.writeValue(jsonPathRulesToExecute.toFile(), rulesToExecute);
-//								 out.println("rules_received");
-//								 logger.println(rulesToExecute);
-//
-//							 }
-//							 else {
-//								 out.println("Received unknown command: " + s);
-//							 }
-//						 } catch(Exception e) {
-//							 e.printStackTrace();
-//							 break;
-//						 }
-//					  }
+					 // Make sure that any old json is deleted
+					 Path jsonPathRulesToExecute= Paths.get("rulesToExecute.json");
+					 if (Files.exists(jsonPathRulesToExecute)) {
+						 Files.delete(jsonPathRulesToExecute);
+					 }
+					 
+					
+					 // Get the rules to execute from the python side (decision based on previous state)
+					 if (run>1) {
+						 System.out.println("Waiting for rules from Python side...");
+						 while(true) {
+							 String fromPython = in.readLine();
+
+							 try {
+
+								 HashMap<String, String> rulesToExecute = new HashMap<String, String>();
+
+								 ObjectMapper fromPythonMapper = new ObjectMapper();
+								 rulesToExecute = new ObjectMapper().readValue(fromPython, HashMap.class);
+								 fromPythonMapper.writeValue(jsonPathRulesToExecute.toFile(), rulesToExecute);
+								 out.println("rules_received");
+								 logger.println(rulesToExecute);
+								 System.out.println("Rules received: " + rulesToExecute);
+								 break;
+
+							 } catch (IOException e) {
+								 System.out.println("Did not receive valid json from Python:");
+								 System.out.println(fromPython);
+								 if (fromPython.equals("exit")) {
+									 logger.println("closed");
+									 out.close();
+									 logger.close();
+									 server.close();
+									 break;
+								 }
+							 }
+
+						 }
+					 }
 					 
 					 
 					
@@ -326,8 +332,8 @@ public class Task_1 {
 					String fromPython;
 					
 					while(true) {
-						 fromPython = in.readLine();
-						
+						fromPython = in.readLine();
+
 						if (fromPython.equals("get_all")) {
 							String state = "not available";
 							if (run==1) {
