@@ -323,34 +323,33 @@ public class Task_1 {
 					Files.delete(jsonPath);
 					
 					// send current state to the python side
-					try {
-						String s;			
-						if(((s = in.readLine()) != null) && (s.equals("exit") == false)) {
-							if(s.equals("get_all")) {
-								String state = "";
-								if (run==1) {
-									state = Observations.getInitialState(architecture);
-								}
-								else {
-									state = Observations.getComponentsUtility(architecture, issueToRulesMapFromFile);
-								}
-								out.println(state);
-								logger.println(state);
+					String fromPython;
+					
+					while(true) {
+						 fromPython = in.readLine();
+						
+						if (fromPython.equals("get_all")) {
+							String state = "not available";
+							if (run==1) {
+								state = Observations.getInitialState(architecture);
 							}
 							else {
-								out.println("Received unknown command: " + s);
+								state = Observations.getComponentsUtility(architecture, issueToRulesMapFromFile);
 							}
-						}
-						if(s.equals("exit")) {
-							logger.println(s);
+							out.println(state);
+							logger.println(state);
+							break;
+						} else if (fromPython.equals("exit")) {
 							logger.println("closed");
 							out.close();
 							logger.close();
 							server.close();
 							break;
 						}
-					} catch(Exception e) {
-						e.printStackTrace();
+					}
+					
+					// Break the mRUBIS loop if exit signal received from Python
+					if (fromPython.equals("exit")) {
 						break;
 					}
 				
