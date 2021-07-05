@@ -199,15 +199,6 @@ class MRubisController():
             self.run_counter += 1
             sleep(0.1)
 
-            if self.run_counter > 1:
-                self._identify_available_rules()
-                print("Available rules:")
-                self._print_rules()
-                picked_rules = self._pick_first_available_rule()
-                print(f"Chosen rule:")
-                self._print_rules(picked_rules)
-                self._send_rules_to_execute(picked_rules)
-
             print(f"Getting state {self.run_counter}/{max_runs}...")
             incoming_state = self._get_mrubis_state()
 
@@ -215,8 +206,18 @@ class MRubisController():
                 self._parse_initial_state(incoming_state)
                 print('Received the initial mRUBIS state.')
                 print(incoming_state)
+            else:
+                self._update_current_state_with_new_issues(incoming_state)
+            
+            self._identify_available_rules()
+            print("Available rules:")
+            self._print_rules()
+            picked_rules = self._pick_first_available_rule()
+            print(f"Chosen rule:")
+            self._print_rules(picked_rules)
+            self._send_rules_to_execute(picked_rules)
 
-            self._update_current_state_with_new_issues(incoming_state)
+            
             self._append_current_state_to_history()
 
         self._send_exit_message()

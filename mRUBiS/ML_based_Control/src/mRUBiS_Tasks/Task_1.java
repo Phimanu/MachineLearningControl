@@ -271,63 +271,22 @@ public class Task_1 {
 					 * Plan
 					 */
 					
-					 
-					
-					 // Make sure that any old json is deleted
-					 Path jsonPathRulesToExecute= Paths.get("rulesToExecute.json");
-					 if (Files.exists(jsonPathRulesToExecute)) {
-						 Files.delete(jsonPathRulesToExecute);
-					 }
-					 
-					
-					 // Get the rules to execute from the python side (decision based on previous state)
-					 // move this afer the sending bit but before execution (even for the first run)
-					 if (run>1) {
-						 System.out.println("Waiting for rules from Python side...");
-						 while(true) {
-							 String fromPython = in.readLine();
-
-							 try {
-
-								 HashMap<String, String> rulesToExecute = new HashMap<String, String>();
-
-								 ObjectMapper fromPythonMapper = new ObjectMapper();
-								 rulesToExecute = new ObjectMapper().readValue(fromPython, HashMap.class);
-								 fromPythonMapper.writeValue(jsonPathRulesToExecute.toFile(), rulesToExecute);
-								 out.println("rules_received");
-								 logger.println(rulesToExecute);
-								 System.out.println("Rules received: " + rulesToExecute);
-								 break;
-
-							 } catch (IOException e) {
-								 System.out.println("Did not receive valid json from Python:");
-								 System.out.println(fromPython);
-								 if (fromPython.equals("exit")) {
-									 logger.println("closed");
-									 out.close();
-									 logger.close();
-									 server.close();
-									 break;
-								 }
-							 }
-
-						 }
-					 }
-					 
-					 
 					
 					plan(interpreter, annotations, P_CF1, P_CF2, P_CF3, P_CF5);
 					// Sorting the failures to address first
 					List<Issue> allIssues = new LinkedList<>();
 					allIssues.addAll(annotations.getIssues());
 					
+
 					// Read json file generated in UtilityIncreasePredictor
 					ObjectMapper mapper = new ObjectMapper();
 					Path jsonPath = Paths.get("issueToRulesMap.json");
 					HashMap<String, HashMap<String, Double>> issueToRulesMapFromFile = mapper.readValue(jsonPath.toFile(), HashMap.class);
-					
+
 					// Delete file before the next run
 					Files.delete(jsonPath);
+
+				
 					
 					// send current state to the python side
 					String fromPython;
@@ -355,11 +314,53 @@ public class Task_1 {
 						}
 					}
 					
+					
 					// Break the mRUBIS loop if exit signal received from Python
 					if (fromPython.equals("exit")) {
 						break;
 					}
-				
+
+					// Get the rules to execute from the python side
+					
+					// Make sure that any old json is deleted
+					Path jsonPathRulesToExecute= Paths.get("rulesToExecute.json");
+					if (Files.exists(jsonPathRulesToExecute)) {
+						Files.delete(jsonPathRulesToExecute);
+					}
+
+					// Get the proposed rules
+					//if (run>1) {
+					System.out.println("Waiting for rules from Python side...");
+					while(true) {
+						fromPython = in.readLine();
+
+						try {
+
+							HashMap<String, String> rulesToExecute = new HashMap<String, String>();
+
+							ObjectMapper fromPythonMapper = new ObjectMapper();
+							rulesToExecute = new ObjectMapper().readValue(fromPython, HashMap.class);
+							fromPythonMapper.writeValue(jsonPathRulesToExecute.toFile(), rulesToExecute);
+							out.println("rules_received");
+							logger.println(rulesToExecute);
+							System.out.println("Rules received: " + rulesToExecute);
+							break;
+
+						} catch (IOException e) {
+							System.out.println("Did not receive valid json from Python:");
+							System.out.println(fromPython);
+							if (fromPython.equals("exit")) {
+								logger.println("closed");
+								out.close();
+								logger.close();
+								server.close();
+								break;
+							}
+						}
+
+					}
+					//}
+
 					
 				 if (CURRENT_APPROACH == Approaches.RANDOM) 
 						{shuffle(allIssues);}
