@@ -111,43 +111,62 @@ class MRubisController():
                 if component_params.get('failure_names'):
                     comp = shop_components[component_uid]
                     issue = comp['failure_names']
+                    comp_type = comp['name'] if issue != 'CF5' else 'CF5'
                     rules = comp['rule_names'].strip('[]').split(',')
                     costs = comp['rule_costs'].strip('[]').split(',')
-                    self.available_rules[shop][issue] = {rule:cost for rule, cost in zip(rules, costs)}
+                    self.available_rules[shop][issue] = {}
+                    self.available_rules[shop][issue]['rules'] = {rule:cost for rule, cost in zip(rules, costs)}
+                    self.available_rules[shop][issue]['affected_component'] = comp_type
     
-    def _print_rules(self, rules_map=None):
-        if rules_map is None:
-            rules_map = self.available_rules
-        for shop, issue_to_rule_map in rules_map.items():
-            print(f"Shop: {shop}:")
+    def _print_available_rules(self):
+        for shop, issue_to_rule_map in self.available_rules.items():
+            print(f"    Shop: {shop}:")
             if isinstance(issue_to_rule_map, dict):
                 for issue, rule_to_cost_map in issue_to_rule_map.items():
-                    print(f"    Issue: {issue}")
+                    print(f"        Issue: {issue}")
                     if isinstance(rule_to_cost_map, dict):
-                        for rule, cost in rule_to_cost_map.items():
-                            print(f"        Rule: {rule} (cost: {cost})")
+                        for rule, cost in rule_to_cost_map['rules'].items():
+                            print(f"            Rule: {rule} (cost: {cost})")
                     else:
-                        print(f"        Rule: {rule_to_cost_map}")
+                        print(f"            Rule: {rule_to_cost_map}")
             else:
-                print(f"     {rules_map[shop]}")
+                print(f"     {self.available_rules[shop]}")
+
+    def _print_picked_rules(self, picked_rules):
+        for shop, issue_to_rule_map in picked_rules.items():
+            print(f"    Shop: {shop}:")
+            if isinstance(issue_to_rule_map, dict):
+                for issue, rule_to_cost_map in issue_to_rule_map.items():
+                    print(f"        Issue: {issue}")
+                    if isinstance(rule_to_cost_map, dict):
+                        for affected_component, rule in rule_to_cost_map.items():
+                            print(f"            Rule: {rule} (fixes {affected_component})")
+                    else:
+                        print(f"            Rule: {rule_to_cost_map}")
+            else:
+                print(f"     {picked_rules[shop]}")
+
 
     def _pick_first_available_rule(self):
         rules_to_execute = {}
         for shop, issue_to_rule_map in self.available_rules.items():
-            rules_to_execute[shop] = {}
-            if issue_to_rule_map:
+            rules_to_execute[shop] = {} # TODO
+            if isinstance(issue_to_rule_map, dict) and len(issue_to_rule_map.keys()) > 0:
                 for issue, rule_to_cost_map in issue_to_rule_map.items():
-                    picked_rule_name = list(rule_to_cost_map.keys())[0]
-                    rules_to_execute[shop][issue] = picked_rule_name
+                    picked_rule_name = list(rule_to_cost_map['rules'].keys())[0]
+                    affected_component = rule_to_cost_map['affected_component']
+                    rules_to_execute[shop][issue] = {}
+                    rules_to_execute[shop][issue][affected_component] = picked_rule_name
             else:
                 rules_to_execute[shop] = 'No issues'
         return rules_to_execute
 
     def _send_rules_to_execute(self, issue_to_rule_map):
+        print('Sending selected rules to mRUBIS...')
         self.socket.send((json.dumps(issue_to_rule_map)  + '\n').encode("utf-8"))
         data = self.socket.recv(64000)
         if data.decode('utf-8').strip() == 'rules_received':
-            print('Rules transmitted successfully')
+            print('Rules transmitted successfully.')
 
     def _send_exit_message(self):
         self.socket.send("exit\n".encode("utf-8"))
@@ -211,12 +230,13 @@ class MRubisController():
             
             self._identify_available_rules()
             print("Available rules:")
-            self._print_rules()
+            self._print_available_rules()
             picked_rules = self._pick_first_available_rule()
             print(f"Chosen rule:")
-            self._print_rules(picked_rules)
-            self._send_rules_to_execute(picked_rules)
+            self._print_picked_rules(picked_rules)
+            self._send_rules_to_execute(picked_rules) # TODO: send shop:issue_comp:rule map to java
 
+            # TODO: query state of affected components once more
             
             self._append_current_state_to_history()
 

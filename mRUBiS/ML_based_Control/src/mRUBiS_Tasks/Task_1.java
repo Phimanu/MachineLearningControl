@@ -280,13 +280,8 @@ public class Task_1 {
 
 					// Read json file generated in UtilityIncreasePredictor
 					ObjectMapper mapper = new ObjectMapper();
-					Path jsonPath = Paths.get("issueToRulesMap.json");
-					HashMap<String, HashMap<String, Double>> issueToRulesMapFromFile = mapper.readValue(jsonPath.toFile(), HashMap.class);
-
-					// Delete file before the next run
-					Files.delete(jsonPath);
-
-				
+					Path issueToRulesPath = Paths.get("issueToRulesMap.json");
+					HashMap<String, HashMap<String, HashMap<String, Double>>> issueToRulesMapFromFile = mapper.readValue(issueToRulesPath.toFile(), HashMap.class);
 					
 					// send current state to the python side
 					String fromPython;
@@ -321,15 +316,7 @@ public class Task_1 {
 					}
 
 					// Get the rules to execute from the python side
-					
-					// Make sure that any old json is deleted
-					Path jsonPathRulesToExecute= Paths.get("rulesToExecute.json");
-					if (Files.exists(jsonPathRulesToExecute)) {
-						Files.delete(jsonPathRulesToExecute);
-					}
-
-					// Get the proposed rules
-					//if (run>1) {
+					Path rulesToExecutePath= Paths.get("rulesToExecute.json"); // this is where the rules will be written to
 					System.out.println("Waiting for rules from Python side...");
 					while(true) {
 						fromPython = in.readLine();
@@ -340,7 +327,7 @@ public class Task_1 {
 
 							ObjectMapper fromPythonMapper = new ObjectMapper();
 							rulesToExecute = new ObjectMapper().readValue(fromPython, HashMap.class);
-							fromPythonMapper.writeValue(jsonPathRulesToExecute.toFile(), rulesToExecute);
+							fromPythonMapper.writeValue(rulesToExecutePath.toFile(), rulesToExecute);
 							out.println("rules_received");
 							logger.println(rulesToExecute);
 							System.out.println("Rules received: " + rulesToExecute);
@@ -359,8 +346,6 @@ public class Task_1 {
 						}
 
 					}
-					//}
-
 					
 				 if (CURRENT_APPROACH == Approaches.RANDOM) 
 						{shuffle(allIssues);}
@@ -475,6 +460,18 @@ public class Task_1 {
 					
 					annotations.getIssues().clear();
 					annotations.getRules().clear();
+					
+					
+					// Delete jsons from the current run
+					// issues, affected components and associated rules
+					if (Files.exists(issueToRulesPath)) {
+						Files.delete(issueToRulesPath);
+					}
+					
+					// rules to execute on this run
+					if (Files.exists(rulesToExecutePath)) {
+						Files.delete(rulesToExecutePath);
+					}
 					
 					
 				}//nex Run
