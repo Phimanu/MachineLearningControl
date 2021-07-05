@@ -54,6 +54,7 @@ public class UtilityIncreasePredictor {
 				+ " rules attached to the issue " + issue);
 		//System.out.print("\n Predicting utility increase for the " + issue.getHandledBy().size()
 			//	+ " rules attached to the issue " );
+		CostPredictor.predictCosts(issue);
 		for (Rule rule : issue.getHandledBy()) {
 			// Each rule increases the utility as much as the issue has
 			// decreased it, except of the ReplaceComponent rule that may
