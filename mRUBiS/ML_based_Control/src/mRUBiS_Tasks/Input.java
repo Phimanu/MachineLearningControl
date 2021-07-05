@@ -11,8 +11,7 @@ public static void selectAction(Issue issue) {
 		
 	    issue.getAffectedComponent();
 	    issue.getAffectedComponent().getType();
-	    issue.getAffectedComponent().getTenant().getName();
-	    
+	    issue.getAffectedComponent().getTenant().getName(); // shop name
 		
 		issue.eClass().getName();
 	

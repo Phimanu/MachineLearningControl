@@ -244,8 +244,12 @@ public class UtilityIncreasePredictor {
 		
 		HashMap<String, HashMap<String, Double>> issueToRulesMap = new HashMap<String, HashMap<String, Double>>();
 		
+		// store affected component as well
+		// rule.getHandles().getAffectedComponent()
+		
 		HashMap<String, Double> rulesToCostsMap = new HashMap<String, Double>();
 		for ( Rule rule : availableRules) {
+			
 			rulesToCostsMap.put(rule.getClass().getSimpleName().replaceAll("Impl", ""), rule.getCosts());
 		}
 		

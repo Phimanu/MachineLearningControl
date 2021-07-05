@@ -281,6 +281,7 @@ public class Task_1 {
 					 
 					
 					 // Get the rules to execute from the python side (decision based on previous state)
+					 // move this afer the sending bit but before execution (even for the first run)
 					 if (run>1) {
 						 System.out.println("Waiting for rules from Python side...");
 						 while(true) {
@@ -468,6 +469,9 @@ public class Task_1 {
 
 					
 					execute(interpreter, allIssues, E_CF1, E_CF2, E_CF3, E_CF5);
+					
+					// sample affected components one more time (get all params sampled in getComponentsUtility)
+					
 					annotations.getIssues().clear();
 					annotations.getRules().clear();
 					
