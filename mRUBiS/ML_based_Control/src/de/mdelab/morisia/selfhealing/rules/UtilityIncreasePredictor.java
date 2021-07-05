@@ -242,25 +242,27 @@ public class UtilityIncreasePredictor {
 		
 		List<Rule> availableRules = issue.getHandledBy();
 		
-		HashMap<String, HashMap<String, Double>> issueToRulesMap = new HashMap<String, HashMap<String, Double>>();
+		// store in the following way: issue->affectedComponent->{rules:costs}
 		
-		// store affected component as well
-		// rule.getHandles().getAffectedComponent()
+		HashMap<String, HashMap<String, HashMap<String, Double>>> issueToCompToRulesMap = new HashMap<String, HashMap<String, HashMap<String, Double>>>();  
 		
-		HashMap<String, Double> rulesToCostsMap = new HashMap<String, Double>();
+		HashMap<String, HashMap<String, Double>> compToRulesMap = new HashMap<String, HashMap<String, Double>>();
+		HashMap<String, Double> ruleToCostsMap = new HashMap<String, Double>();
 		for ( Rule rule : availableRules) {
-			
-			rulesToCostsMap.put(rule.getClass().getSimpleName().replaceAll("Impl", ""), rule.getCosts());
+			ruleToCostsMap.put(rule.getClass().getSimpleName().replaceAll("Impl", ""), rule.getCosts());
 		}
+		String affectedComponent = issue.getAffectedComponent().getType().getName();
+		compToRulesMap.put(affectedComponent, ruleToCostsMap);
 		
 		try {
 			Path jsonFile = Paths.get("issueToRulesMap.json");
 			ObjectMapper mapper = new ObjectMapper(); 
 			if (Files.exists(jsonFile)) {
-				issueToRulesMap = mapper.readValue(jsonFile.toFile(), HashMap.class);
+				issueToCompToRulesMap = mapper.readValue(jsonFile.toFile(), HashMap.class);
 			}
-			issueToRulesMap.put(issue.getClass().getSimpleName().replaceAll("Impl", ""), rulesToCostsMap);
-			mapper.writeValue(jsonFile.toFile(), issueToRulesMap);
+			String issueName = issue.getClass().getSimpleName().replaceAll("Impl", "");
+			issueToCompToRulesMap.put(issueName, compToRulesMap);
+			mapper.writeValue(jsonFile.toFile(), issueToCompToRulesMap);
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
