@@ -152,9 +152,9 @@ class MRubisController():
             if isinstance(issue_to_rule_map, dict) and len(issue_to_rule_map.keys()) > 0:
                 for issue, rule_to_cost_map in issue_to_rule_map.items():
                     picked_rule_name = list(rule_to_cost_map['rules'].keys())[0]
-                    affected_component = rule_to_cost_map['affected_component']
+                    affected_component_type = rule_to_cost_map['affected_component']
                     rules_to_execute[shop][issue] = {}
-                    rules_to_execute[shop][issue][affected_component] = picked_rule_name
+                    rules_to_execute[shop][issue][affected_component_type] = picked_rule_name
             else:
                 rules_to_execute[shop] = 'No issues'
         return rules_to_execute
