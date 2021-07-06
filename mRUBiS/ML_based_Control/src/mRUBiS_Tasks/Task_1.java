@@ -289,13 +289,13 @@ public class Task_1 {
 					while(true) {
 						fromPython = in.readLine();
 
-						if (fromPython.equals("get_all")) {
-							String state = "not available";
+						if (fromPython.equals("get_state_before_taking_action")) {
+							String state = "not_available";
 							if (run==1) {
 								state = Observations.getInitialState(architecture);
 							}
 							else {
-								state = Observations.getComponentsUtility(architecture, issueToRulesMapFromFile);
+								state = Observations.getAffectedComponentStatus(architecture, issueToRulesMapFromFile);
 							}
 							out.println(state);
 							logger.println(state);
@@ -456,7 +456,7 @@ public class Task_1 {
 					
 					execute(interpreter, allIssues, E_CF1, E_CF2, E_CF3, E_CF5);
 					
-					// sample affected components one more time (get all params sampled in getComponentsUtility)
+					// TODO: sample affected components one more time (get all params sampled in getComponentsUtility)
 					
 					annotations.getIssues().clear();
 					annotations.getRules().clear();

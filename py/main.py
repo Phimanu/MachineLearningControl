@@ -92,7 +92,7 @@ class MRubisController():
 
     def _get_mrubis_state(self):
 
-        self.socket.send("get_all\n".encode("utf-8"))
+        self.socket.send("get_state_before_taking_action\n".encode("utf-8"))
         data = self.socket.recv(64000)
 
         try:
@@ -107,16 +107,14 @@ class MRubisController():
     def _identify_available_rules(self):
         for shop, shop_components in self.mrubis_state.items():
             self.available_rules[shop] = {}
-            for component_uid, component_params in shop_components.items():
-                if component_params.get('failure_names'):
-                    comp = shop_components[component_uid]
-                    issue = comp['failure_names']
-                    comp_type = comp['name'] if issue != 'CF5' else 'CF5'
-                    rules = comp['rule_names'].strip('[]').split(',')
-                    costs = comp['rule_costs'].strip('[]').split(',')
+            for component_type, component_params in shop_components.items():
+                if component_params.get('failure_name'):
+                    issue = component_params['failure_name']
+                    rules = component_params['rule_names'].strip('[]').split(',')
+                    costs = component_params['rule_costs'].strip('[]').split(',')
                     self.available_rules[shop][issue] = {}
                     self.available_rules[shop][issue]['rules'] = {rule:cost for rule, cost in zip(rules, costs)}
-                    self.available_rules[shop][issue]['affected_component'] = comp_type
+                    self.available_rules[shop][issue]['affected_component'] = component_type if issue != 'CF5' else 'CF5'
     
     def _print_available_rules(self):
         for shop, issue_to_rule_map in self.available_rules.items():
@@ -192,18 +190,18 @@ class MRubisController():
     def _parse_initial_state(self, initial_state):
         for shop, shop_components in initial_state.items():
             self.mrubis_state[shop] = {}
-            for component_uid, component_params in shop_components.items():
-                self.mrubis_state[shop][component_uid] = {}
+            for component_type, component_params in shop_components.items():
+                self.mrubis_state[shop][component_type] = {}
                 for param, value in component_params.items():
-                    self.mrubis_state[shop][component_uid][param] = value
+                    self.mrubis_state[shop][component_type][param] = value
 
     def _update_current_state_with_new_issues(self, incoming_state):
         for shop, shop_components in incoming_state.items():
-            for component_uid, component_params in shop_components.items():
-                if component_uid not in self.mrubis_state[shop].keys():
-                    self.mrubis_state[shop][component_uid] = {}
+            for component_type, component_params in shop_components.items():
+                if component_type not in self.mrubis_state[shop].keys():
+                    self.mrubis_state[shop][component_type] = {}
                 for param, value in component_params.items():
-                    self.mrubis_state[shop][component_uid][param] = value
+                    self.mrubis_state[shop][component_type][param] = value
 
     def run(self, external_start=False, max_runs=100):
 

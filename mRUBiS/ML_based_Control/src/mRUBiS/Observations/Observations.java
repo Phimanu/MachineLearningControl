@@ -38,7 +38,7 @@ public class Observations {
 			for (Component component: shop.getComponents()) {
 				
 				HashMap<String, String> parameterMap = new HashMap<String, String>();
-				parameterMap.put("name", component.getType().getName());
+				parameterMap.put("uid", component.getUid());
 				parameterMap.put("state", component.getState().getName());
 				parameterMap.put("adt", String.valueOf(component.getADT()));
 				parameterMap.put("connectivity", String.valueOf(new Double(component.getProvidedInterfaces().size() + component.getRequiredInterfaces().size())));
@@ -50,7 +50,7 @@ public class Observations {
 				parameterMap.put("replica", String.valueOf(component.getInUseReplica()));
 				parameterMap.put("perf_max", String.valueOf(component.getType().getPerformanceMax()));
 				parameterMap.put("component_utility", String.valueOf(ArchitectureUtilCal.computeComponentUtility(component)));
-				componentMap.put(component.getUid() , parameterMap);
+				componentMap.put(component.getType().getName() , parameterMap);
 			}
 		}
 
@@ -65,7 +65,7 @@ public class Observations {
 
 	}
 
-	public static String getComponentsUtility(Architecture MRUBIS, HashMap<String, HashMap<String, HashMap<String, Double>>> issuesToRulesMap){
+	public static String getAffectedComponentStatus(Architecture MRUBIS, HashMap<String, HashMap<String, HashMap<String, Double>>> issuesToRulesMap){
 
 		String json = "";
 
@@ -91,9 +91,9 @@ public class Observations {
 
 					HashMap<String, String> parameterMap = new HashMap<String, String>();
 
-					parameterMap.put("name", affectedComponentType);
+					parameterMap.put("uid", affectedComponent.getUid());
 					parameterMap.put("state", affectedComponent.getState().getName());
-					parameterMap.put("failure_names", failureName.toString());
+					parameterMap.put("failure_name", failureName.toString());
 					parameterMap.put("rule_names", availableRuleNames.toString());
 					parameterMap.put("rule_costs", availableRuleCosts.toString());
 					parameterMap.put("adt", String.valueOf(affectedComponent.getADT()));
@@ -107,7 +107,7 @@ public class Observations {
 					parameterMap.put("perf_max", String.valueOf(affectedComponent.getType().getPerformanceMax()));
 					parameterMap.put("component_utility", String.valueOf(ArchitectureUtilCal.computeComponentUtility(affectedComponent)));
 
-					componentMap.put(affectedComponent.getUid() , parameterMap);
+					componentMap.put(affectedComponentType , parameterMap);
 					
 				} else {
 					System.out.println("Failed to find rule for issue " + failureName + " affecting component " + affectedComponentType);
