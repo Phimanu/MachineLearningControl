@@ -1,7 +1,13 @@
 package mRUBiS_Tasks;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.mdelab.morisia.comparch.Issue;
 import de.mdelab.morisia.comparch.Rule;
@@ -9,14 +15,25 @@ import de.mdelab.morisia.comparch.Rule;
 public class Input {
 public static void selectAction(Issue issue) {
 		
-	    issue.getAffectedComponent();
-	    issue.getAffectedComponent().getType();
-	    issue.getAffectedComponent().getTenant().getName(); // shop name
+		String issueName = issue.getClass().getSimpleName().replaceAll("Impl", "");
+	    String shopName = issue.getAffectedComponent().getTenant().getName();
+	    String componentType = issue.getAffectedComponent().getType().getName();
 		
 		issue.eClass().getName();
+		
+		// Read rules to execute from JSON (received and stored in Task 1)
+		Path rulesToExecutePath= Paths.get("rulesToExecute.json");
+		HashMap<String, HashMap<String, HashMap<String, String>>> rulesToExecute = new HashMap<String, HashMap<String, HashMap<String, String>>>();
+		try {
+			rulesToExecute = new ObjectMapper().readValue(rulesToExecutePath.toFile(), HashMap.class);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		String actionToExecute = rulesToExecute.get(shopName).get(issueName).get(componentType);
 	
 		//this should be read from input 
-		String actionToExecute="RestartComponent";
+		//String actionToExecute="RestartComponent";
 		
 		//Remove all the other possible actions
 		List<Rule> actionsToRemove= new LinkedList<Rule>();

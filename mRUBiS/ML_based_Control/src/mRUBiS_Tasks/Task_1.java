@@ -75,7 +75,7 @@ import mRUBiS.Observations.Observations;
 public class Task_1 {
 
 	public static Approaches CURRENT_APPROACH = Approaches.Udriven;
-  //public static Approaches CURRENT_APPROACH = Approaches.RANDOM;
+	//public static Approaches CURRENT_APPROACH = Approaches.RANDOM;
 	//public static Approaches CURRENT_APPROACH = Approaches.Learning;
 	public static Utilityfunction UTILITY_FUNCTION = Utilityfunction.Combined;
 	
@@ -256,36 +256,51 @@ public class Task_1 {
 				if (run <= RUNS) {
 					System.out.print("\n Run : " + run);
 					System.out.print("\n . \n .");
+					
+					
+					
+					// Define the paths to the JSON files that are used
+					Path issueToRulesPath = Paths.get("issueToRulesMap.json"); // issues, affected components and associated rules
+					Path rulesToExecutePath= Paths.get("rulesToExecute.json"); // rules to execute on this run
+
+
+					// Delete jsons from previous run
+					if (Files.exists(issueToRulesPath)) {
+						Files.delete(issueToRulesPath);
+					}
+					if (Files.exists(rulesToExecutePath)) {
+						Files.delete(rulesToExecutePath);
+					}
+					
+					
 					/*
 					 * Analyze
 					 */
-					 
-					
-					
 					analyze(interpreter, annotations, A_CF1, A_CF2, A_CF3, A_CF5);
-					
-					
 					System.out.printf("\n>> Analyze Compelete\n\n");
-					 ArchitectureUtilCal.computeOverallUtility(architecture);
+					ArchitectureUtilCal.computeOverallUtility(architecture);
+
+
+
 					/*
 					 * Plan
 					 */
-					
-					
 					plan(interpreter, annotations, P_CF1, P_CF2, P_CF3, P_CF5);
 					// Sorting the failures to address first
 					List<Issue> allIssues = new LinkedList<>();
 					allIssues.addAll(annotations.getIssues());
 					
-
+					
+					/*
+					 * Send state to python and receive the actions (rules) to apply
+					 */
 					// Read json file generated in UtilityIncreasePredictor
 					ObjectMapper mapper = new ObjectMapper();
-					Path issueToRulesPath = Paths.get("issueToRulesMap.json");
 					HashMap<String, HashMap<String, HashMap<String, Double>>> issueToRulesMapFromFile = mapper.readValue(issueToRulesPath.toFile(), HashMap.class);
-					
+
 					// send current state to the python side
 					String fromPython;
-					
+
 					while(true) {
 						fromPython = in.readLine();
 
@@ -308,22 +323,21 @@ public class Task_1 {
 							break;
 						}
 					}
-					
-					
+
+
 					// Break the mRUBIS loop if exit signal received from Python
 					if (fromPython.equals("exit")) {
 						break;
 					}
 
 					// Get the rules to execute from the python side
-					Path rulesToExecutePath= Paths.get("rulesToExecute.json"); // this is where the rules will be written to
 					System.out.println("Waiting for rules from Python side...");
 					while(true) {
 						fromPython = in.readLine();
 
 						try {
 
-							HashMap<String, String> rulesToExecute = new HashMap<String, String>();
+							HashMap<String, HashMap<String, HashMap<String, String>>> rulesToExecute = new HashMap<String, HashMap<String, HashMap<String, String>>>();
 
 							ObjectMapper fromPythonMapper = new ObjectMapper();
 							rulesToExecute = new ObjectMapper().readValue(fromPython, HashMap.class);
@@ -346,8 +360,9 @@ public class Task_1 {
 						}
 
 					}
-					
-				 if (CURRENT_APPROACH == Approaches.RANDOM) 
+
+
+					if (CURRENT_APPROACH == Approaches.RANDOM) 
 						{shuffle(allIssues);}
 					
 						
@@ -399,11 +414,7 @@ public class Task_1 {
 								reliability = issue.getAffectedComponent().getType().getReliability();
 							}
 
-							
 
-							
-							
-							
 							Training.append( issue.getAffectedComponent().getTenant().getName()+SEP
 									+ issue.getAffectedComponent().getType().getName() + SEP
 									+ issue.eClass().getName() + SEP 
@@ -456,7 +467,7 @@ public class Task_1 {
 					
 					execute(interpreter, allIssues, E_CF1, E_CF2, E_CF3, E_CF5);
 					
-					// TODO: sample affected components one more time (get all params sampled in getComponentsUtility)
+					// sample affected components one more time (get all params sampled in getComponentsUtility)
 					while(true) {
 						fromPython = in.readLine();
 
@@ -477,18 +488,6 @@ public class Task_1 {
 					
 					annotations.getIssues().clear();
 					annotations.getRules().clear();
-					
-					
-					// Delete jsons from the current run
-					// issues, affected components and associated rules
-					if (Files.exists(issueToRulesPath)) {
-						Files.delete(issueToRulesPath);
-					}
-					
-					// rules to execute on this run
-					if (Files.exists(rulesToExecutePath)) {
-						Files.delete(rulesToExecutePath);
-					}
 					
 					
 				}//nex Run
