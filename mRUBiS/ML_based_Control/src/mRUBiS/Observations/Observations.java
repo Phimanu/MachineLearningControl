@@ -84,6 +84,8 @@ public class Observations {
 				String affectedComponentType = affectedComponent.getType().getName();
 				String failureName = issue.getClass().getSimpleName().replaceAll("Impl", "");
 				
+				System.out.println("Current failure name: " + failureName);
+				
 				if (issuesToRulesMap.get(failureName).containsKey(affectedComponentType)) {
 					HashMap<String, Double> availableRules = issuesToRulesMap.get(failureName).get(affectedComponentType);
 					List<String> availableRuleNames = new ArrayList<>(availableRules.keySet());
@@ -131,6 +133,83 @@ public class Observations {
 		return json;
 
 	}
+	
+	
+	public static String getStatusAfterTakingAction(Architecture MRUBIS, HashMap<String, HashMap<String, HashMap<String, Double>>> issuesToRulesMap){
+
+		String json = "";
+
+		HashMap<String, HashMap<String, HashMap<String, String>>> shopMap = new HashMap<String, HashMap<String, HashMap<String, String>>>();
+		
+		System.out.println("Current issuesmap: " + issuesToRulesMap);
+
+		for (Tenant shop : MRUBIS.getTenants())
+		{
+
+			List<Component> shopComponents = shop.getComponents();
+			HashMap<String, HashMap<String, String>> componentMap = new HashMap<String, HashMap<String, String>>();
+			
+			
+			for (String issueName: issuesToRulesMap.keySet()) {
+				
+				for (Component correspondingShopComponent: shopComponents) {
+					
+					if (issuesToRulesMap.get(issueName).containsKey(correspondingShopComponent.getType().getName())) {
+						
+						HashMap<String, String> parameterMap = new HashMap<String, String>();
+						
+						// check if the component still has any remaining issues
+						String failureName = "";
+						String availableRuleNames = "";
+						String availableRuleCosts = "";
+						if (correspondingShopComponent.getIssues().size() > 0) {
+							Issue persistentIssue = correspondingShopComponent.getIssues().get(0);
+							failureName = persistentIssue.getClass().getSimpleName().replaceAll("Impl", "");
+							List<Rule> availableRules = persistentIssue.getHandledBy();
+							availableRuleCosts = availableRules.stream().map(rule -> rule.getClass().getSimpleName().replaceAll("Impl", "")).collect( Collectors.toList() ).toString();
+							availableRuleCosts = availableRules.stream().map(rule -> String.valueOf(rule.getCosts())).collect( Collectors.toList() ).toString();
+						}				
+						
+						String affectedComponentType = correspondingShopComponent.getType().getName();
+
+						parameterMap.put("uid", correspondingShopComponent.getUid());
+						parameterMap.put("state", correspondingShopComponent.getState().getName());
+						parameterMap.put("failure_name", failureName.toString());
+						parameterMap.put("rule_names", availableRuleNames.toString());
+						parameterMap.put("rule_costs", availableRuleCosts.toString());
+						parameterMap.put("adt", String.valueOf(correspondingShopComponent.getADT()));
+						parameterMap.put("connectivity", String.valueOf(new Double(correspondingShopComponent.getProvidedInterfaces().size() + correspondingShopComponent.getRequiredInterfaces().size())));
+						parameterMap.put("importance", String.valueOf(correspondingShopComponent.getTenant().getImportance()));
+						parameterMap.put("reliability", String.valueOf(correspondingShopComponent.getType().getReliability()));
+						parameterMap.put("criticality", String.valueOf(correspondingShopComponent.getType().getCriticality()));
+						parameterMap.put("request", String.valueOf(correspondingShopComponent.getRequest()));
+						parameterMap.put("sat_point", String.valueOf(correspondingShopComponent.getType().getSatPoint()));
+						parameterMap.put("replica", String.valueOf(correspondingShopComponent.getInUseReplica()));
+						parameterMap.put("perf_max", String.valueOf(correspondingShopComponent.getType().getPerformanceMax()));
+						parameterMap.put("component_utility", String.valueOf(ArchitectureUtilCal.computeComponentUtility(correspondingShopComponent)));
+
+						componentMap.put(affectedComponentType , parameterMap);
+						
+					}
+					
+				}
+				
+			}
+
+			shopMap.put(shop.getName(), componentMap);
+
+		}
+
+		try {
+			json = new ObjectMapper().writeValueAsString(shopMap);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+
+		return json;
+
+	}
+
 
 	public static void makeObservation(Architecture mRUBiS){
 

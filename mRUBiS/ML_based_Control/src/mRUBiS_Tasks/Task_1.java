@@ -457,6 +457,23 @@ public class Task_1 {
 					execute(interpreter, allIssues, E_CF1, E_CF2, E_CF3, E_CF5);
 					
 					// TODO: sample affected components one more time (get all params sampled in getComponentsUtility)
+					while(true) {
+						fromPython = in.readLine();
+
+						if (fromPython.equals("get_state_after_taking_action")) {
+							String state = "not_available";
+							state = Observations.getStatusAfterTakingAction(architecture, issueToRulesMapFromFile);
+							out.println(state);
+							logger.println(state);
+							break;
+						} else if (fromPython.equals("exit")) {
+							logger.println("closed");
+							out.close();
+							logger.close();
+							server.close();
+							break;
+						}
+					}
 					
 					annotations.getIssues().clear();
 					annotations.getRules().clear();

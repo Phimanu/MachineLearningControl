@@ -90,9 +90,9 @@ class MRubisController():
         self.socket.connect((self.host, self.port))
         print('Connected to the Java side.')
 
-    def _get_mrubis_state(self):
+    def _get_mrubis_state(self, message):
 
-        self.socket.send("get_state_before_taking_action\n".encode("utf-8"))
+        self.socket.send(f"{message}\n".encode("utf-8"))
         data = self.socket.recv(64000)
 
         try:
@@ -195,7 +195,7 @@ class MRubisController():
                 for param, value in component_params.items():
                     self.mrubis_state[shop][component_type][param] = value
 
-    def _update_current_state_with_new_issues(self, incoming_state):
+    def _update_current_state(self, incoming_state):
         for shop, shop_components in incoming_state.items():
             for component_type, component_params in shop_components.items():
                 if component_type not in self.mrubis_state[shop].keys():
@@ -217,14 +217,16 @@ class MRubisController():
             sleep(0.1)
 
             print(f"Getting state {self.run_counter}/{max_runs}...")
-            incoming_state = self._get_mrubis_state()
+            incoming_state = self._get_mrubis_state(message="get_state_before_taking_action")
 
             if self.run_counter == 1:
                 self._parse_initial_state(incoming_state)
                 print('Received the initial mRUBIS state.')
                 print(incoming_state)
             else:
-                self._update_current_state_with_new_issues(incoming_state)
+                self._update_current_state(incoming_state)
+
+            self._append_current_state_to_history()
             
             self._identify_available_rules()
             print("Available rules:")
@@ -232,10 +234,11 @@ class MRubisController():
             picked_rules = self._pick_first_available_rule()
             print(f"Chosen rule:")
             self._print_picked_rules(picked_rules)
-            self._send_rules_to_execute(picked_rules) # TODO: send shop:issue_comp:rule map to java
+            self._send_rules_to_execute(picked_rules)
 
             # TODO: query state of affected components once more
-            
+            incoming_state = self._get_mrubis_state(message="get_state_after_taking_action")
+            self._update_current_state(incoming_state)
             self._append_current_state_to_history()
 
         self._send_exit_message()
