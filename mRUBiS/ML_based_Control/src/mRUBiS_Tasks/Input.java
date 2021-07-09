@@ -19,8 +19,6 @@ public static void selectAction(Issue issue) {
 	    String shopName = issue.getAffectedComponent().getTenant().getName();
 	    String componentType = issue.getAffectedComponent().getType().getName();
 		
-		issue.eClass().getName();
-		
 		// Read rules to execute from JSON (received and stored in Task 1)
 		Path rulesToExecutePath= Paths.get("rulesToExecute.json");
 		HashMap<String, HashMap<String, HashMap<String, String>>> rulesToExecute = new HashMap<String, HashMap<String, HashMap<String, String>>>();
@@ -30,10 +28,16 @@ public static void selectAction(Issue issue) {
 			e.printStackTrace();
 		}
 		
-		String actionToExecute = rulesToExecute.get(shopName).get(issueName).get(componentType);
-	
-		//this should be read from input 
-		//String actionToExecute="RestartComponent";
+		System.out.println("Current issue: " + issueName);
+		String actionToExecute = "";
+		if (issueName.equals("CF5")) {
+			actionToExecute = rulesToExecute.get(shopName).get(issueName).get(issueName);
+		}
+		else {
+			actionToExecute = rulesToExecute.get(shopName).get(issueName).get(componentType);	
+		}
+		
+		System.out.println("Action to execute: " + actionToExecute);
 		
 		//Remove all the other possible actions
 		List<Rule> actionsToRemove= new LinkedList<Rule>();
@@ -41,7 +45,7 @@ public static void selectAction(Issue issue) {
 		for (Rule rule : issue.getHandledBy()) {
 			if(rule.eClass().getName().equals(actionToExecute))
 				{actionToKeep.add(rule);
-				System.out.print("\n\n  Action Sucssefuylly Added to Execution List ");
+				System.out.print("\n\n  Action successfully added to Execution List ");
 				}
 			else actionsToRemove.add(rule);
 				

@@ -1,11 +1,24 @@
 package de.mdelab.morisia.selfhealing.rules;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import de.mdelab.morisia.comparch.AddReplica;
+import de.mdelab.morisia.comparch.Architecture;
 import de.mdelab.morisia.comparch.CF1;
 import de.mdelab.morisia.comparch.CF2;
 import de.mdelab.morisia.comparch.CF3;
@@ -24,6 +37,7 @@ import de.mdelab.morisia.selfhealing.Evaluation_ML;
 import de.mdelab.morisia.selfhealing.LearningModel;
 import de.mdelab.morisia.selfhealing.LearningQuality;
 import de.mdelab.morisia.selfhealing.Utilityfunction;
+import mRUBiS.Observations.Observations;
 import mRUBiS_Tasks.Input;
 import mRUBiS_Tasks.Task_1;
 
@@ -31,6 +45,36 @@ import mRUBiS_Tasks.Task_1;
 public class RuleSelector {
 
 	private static Random random = new Random();
+	// Open up the socket
+	private static int port = 8080;
+	
+	//System.out.println(port);
+	private static ServerSocket server;
+	private static Socket client;
+	public static BufferedReader in;
+    public static PrintWriter out;
+    public static PrintWriter logger;
+    private static Path issueToRulesPath = Paths.get("issueToRulesMap.json"); // issues, affected components and associated rules;
+    private static Path rulesToExecutePath= Paths.get("rulesToExecute.json"); // rules to execute on this run
+    private static int run = 1;
+    
+    private static void ensureSocketIsOpen() {
+    	if (server == null || (server != null && !server.isBound())) {
+        	try {
+    			server = new ServerSocket(port);
+    			System.out.println("wait for connection on port " + port);
+    			client = server.accept();
+    			System.out.println("got connection on port " + port);
+    			in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+    			out = new PrintWriter(client.getOutputStream(),true);
+    			logger = new PrintWriter("log.txt", "UTF-8");
+    		} catch (IOException e) {
+    			System.out.println("Problem with opening the socket");
+    			e.printStackTrace();
+    		}	
+    	}
+    }
+	
 
 	private final static Logger LOGGER = Logger.getLogger(RuleSelector.class
 			.getName());
@@ -83,8 +127,104 @@ public class RuleSelector {
 	private static void learningApproach(Issue issue, Utilityfunction uTILITY_FUNCTION) {
 		// read utility increase 
 		UtilityIncreasePredictor.calculateCombinedUtilityIncrease(issue);
+		
+		communicateWithPython(issue);
+		
 		Input.selectAction(issue);
 		
+	}
+	
+	
+	private static void communicateWithPython(Issue issue) {
+		
+		ensureSocketIsOpen();
+		
+		/*
+		 * Send state to python and receive the actions (rules) to apply
+		 */
+		// Read json file generated in UtilityIncreasePredictor
+		ObjectMapper mapper = new ObjectMapper();
+		HashMap<String, HashMap<String, HashMap<String, Double>>> issueToRulesMapFromFile = null;
+		try {
+			issueToRulesMapFromFile = mapper.readValue(issueToRulesPath.toFile(), HashMap.class);
+		} catch (IOException e2) {
+			e2.printStackTrace();
+		}
+
+		// send current state to the python side
+		Architecture architecture = issue.getAnnotations().getArchitecture();
+		String fromPython = "";
+		System.out.println("Waiting for Python to send get_state_before_taking_action message...");
+		while(true) { 
+			try {
+				fromPython = in.readLine();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+
+			if (fromPython.equals("get_state_before_taking_action")) {
+				String state = "not_available";
+				state = Observations.getCurrentState(architecture, issueToRulesMapFromFile);
+				out.println(state);
+				logger.println(state);
+				break;
+			} else if (fromPython.equals("exit")) {
+				logger.println("closed");
+				out.close();
+				logger.close();
+				try {
+					server.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				break;
+			}
+		}
+
+
+		// Break the mRUBIS loop if exit signal received from Python
+		if (fromPython.equals("exit")) {
+			System.exit(1);
+		}
+
+		// Get the rules to execute from the python side
+		System.out.println("Waiting for rules from Python side...");
+		while(true) {
+			try {
+				fromPython = in.readLine();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+
+			try {
+
+				HashMap<String, HashMap<String, HashMap<String, String>>> rulesToExecute = new HashMap<String, HashMap<String, HashMap<String, String>>>();
+
+				ObjectMapper fromPythonMapper = new ObjectMapper();
+				rulesToExecute = new ObjectMapper().readValue(fromPython, HashMap.class);
+				fromPythonMapper.writeValue(rulesToExecutePath.toFile(), rulesToExecute);
+				out.println("rules_received");
+				logger.println(rulesToExecute);
+				System.out.println("Rules received: " + rulesToExecute);
+				break;
+
+			} catch (IOException e) {
+				System.out.println("Did not receive valid json from Python:");
+				System.out.println(fromPython);
+				if (fromPython.equals("exit")) {
+					logger.println("closed");
+					out.close();
+					logger.close();
+					try {
+						server.close();
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+					break;
+				}
+			}
+
+		}	
 	}
 
 	

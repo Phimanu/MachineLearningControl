@@ -74,14 +74,17 @@ import mRUBiS.Observations.Observations;
 
 public class Task_1 {
 
-	public static Approaches CURRENT_APPROACH = Approaches.Udriven;
+	//public static Approaches CURRENT_APPROACH = Approaches.Udriven;
 	//public static Approaches CURRENT_APPROACH = Approaches.RANDOM;
-	//public static Approaches CURRENT_APPROACH = Approaches.Learning;
+	public static Approaches CURRENT_APPROACH = Approaches.Learning;
 	public static Utilityfunction UTILITY_FUNCTION = Utilityfunction.Combined;
 	
 
 	public static FileWriter Training = null;
 	public static FileWriter MLValidation = null;
+	
+    private static Path issueToRulesPath = Paths.get("issueToRulesMap.json");
+    private static Path rulesToExecutePath= Paths.get("rulesToExecute.json");
 	
 	
 	private final static int RUNS = 10000; 
@@ -93,18 +96,17 @@ public class Task_1 {
 	
 	public static void main(String[] args) throws SDMException, IOException, InterruptedException {
 		
-		// Open up the socket
-		int port = 8080;
-		
-		//System.out.println(port);
-		ServerSocket server = new ServerSocket(port);
-        PrintWriter logger = new PrintWriter("log.txt", "UTF-8");
-        System.out.println("wait for connection on port " + port);
-        Socket client = server.accept();
-        System.out.println("got connection on port " + port);
-		
-        BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-        PrintWriter out = new PrintWriter(client.getOutputStream(),true);
+		try {
+			if (Files.exists(issueToRulesPath)) {
+				Files.delete(issueToRulesPath);
+			}
+			if (Files.exists(rulesToExecutePath)) {
+				Files.delete(rulesToExecutePath);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	
 
 		boolean enableLogging = false;
 		configLogging(enableLogging);
@@ -244,7 +246,6 @@ public class Task_1 {
 			
 			while (!simulator.isSimulationCompleted()) { // = number of RUNS
 				run++;
-				
 
 				// call the simulator to inject issues.
 				simulator.injectIssues();
@@ -258,28 +259,12 @@ public class Task_1 {
 					System.out.print("\n . \n .");
 					
 					
-					
-					// Define the paths to the JSON files that are used
-					Path issueToRulesPath = Paths.get("issueToRulesMap.json"); // issues, affected components and associated rules
-					Path rulesToExecutePath= Paths.get("rulesToExecute.json"); // rules to execute on this run
-
-
-					// Delete jsons from previous run
-					if (Files.exists(issueToRulesPath)) {
-						Files.delete(issueToRulesPath);
-					}
-					if (Files.exists(rulesToExecutePath)) {
-						Files.delete(rulesToExecutePath);
-					}
-					
-					
 					/*
 					 * Analyze
 					 */
 					analyze(interpreter, annotations, A_CF1, A_CF2, A_CF3, A_CF5);
 					System.out.printf("\n>> Analyze Compelete\n\n");
 					ArchitectureUtilCal.computeOverallUtility(architecture);
-
 
 
 					/*
@@ -290,76 +275,6 @@ public class Task_1 {
 					List<Issue> allIssues = new LinkedList<>();
 					allIssues.addAll(annotations.getIssues());
 					
-					
-					/*
-					 * Send state to python and receive the actions (rules) to apply
-					 */
-					// Read json file generated in UtilityIncreasePredictor
-					ObjectMapper mapper = new ObjectMapper();
-					HashMap<String, HashMap<String, HashMap<String, Double>>> issueToRulesMapFromFile = mapper.readValue(issueToRulesPath.toFile(), HashMap.class);
-
-					// send current state to the python side
-					String fromPython;
-
-					while(true) {
-						fromPython = in.readLine();
-
-						if (fromPython.equals("get_state_before_taking_action")) {
-							String state = "not_available";
-							if (run==1) {
-								state = Observations.getInitialState(architecture);
-							}
-							else {
-								state = Observations.getAffectedComponentStatus(architecture, issueToRulesMapFromFile);
-							}
-							out.println(state);
-							logger.println(state);
-							break;
-						} else if (fromPython.equals("exit")) {
-							logger.println("closed");
-							out.close();
-							logger.close();
-							server.close();
-							break;
-						}
-					}
-
-
-					// Break the mRUBIS loop if exit signal received from Python
-					if (fromPython.equals("exit")) {
-						break;
-					}
-
-					// Get the rules to execute from the python side
-					System.out.println("Waiting for rules from Python side...");
-					while(true) {
-						fromPython = in.readLine();
-
-						try {
-
-							HashMap<String, HashMap<String, HashMap<String, String>>> rulesToExecute = new HashMap<String, HashMap<String, HashMap<String, String>>>();
-
-							ObjectMapper fromPythonMapper = new ObjectMapper();
-							rulesToExecute = new ObjectMapper().readValue(fromPython, HashMap.class);
-							fromPythonMapper.writeValue(rulesToExecutePath.toFile(), rulesToExecute);
-							out.println("rules_received");
-							logger.println(rulesToExecute);
-							System.out.println("Rules received: " + rulesToExecute);
-							break;
-
-						} catch (IOException e) {
-							System.out.println("Did not receive valid json from Python:");
-							System.out.println(fromPython);
-							if (fromPython.equals("exit")) {
-								logger.println("closed");
-								out.close();
-								logger.close();
-								server.close();
-								break;
-							}
-						}
-
-					}
 
 
 					if (CURRENT_APPROACH == Approaches.RANDOM) 
@@ -468,26 +383,42 @@ public class Task_1 {
 					execute(interpreter, allIssues, E_CF1, E_CF2, E_CF3, E_CF5);
 					
 					// sample affected components one more time (get all params sampled in getComponentsUtility)
+					ObjectMapper mapper = new ObjectMapper();
+					HashMap<String, HashMap<String, HashMap<String, Double>>> issueToRulesMapFromFile = null;
+					try {
+						issueToRulesMapFromFile = mapper.readValue(issueToRulesPath.toFile(), HashMap.class);
+					} catch (IOException e2) {
+						e2.printStackTrace();
+					}
+
+
+					System.out.println("Waiting for Python to send get_state_after_taking_action message...");
+					String fromPython = "";
 					while(true) {
-						fromPython = in.readLine();
+						fromPython = RuleSelector.in.readLine();
 
 						if (fromPython.equals("get_state_after_taking_action")) {
 							String state = "not_available";
 							state = Observations.getStatusAfterTakingAction(architecture, issueToRulesMapFromFile);
-							out.println(state);
-							logger.println(state);
-							break;
-						} else if (fromPython.equals("exit")) {
-							logger.println("closed");
-							out.close();
-							logger.close();
-							server.close();
+							RuleSelector.out.println(state);
+							RuleSelector.logger.println(state);
 							break;
 						}
 					}
-					
+
 					annotations.getIssues().clear();
 					annotations.getRules().clear();
+
+					try {
+						if (Files.exists(issueToRulesPath)) {
+							Files.delete(issueToRulesPath);
+						}
+						if (Files.exists(rulesToExecutePath)) {
+							Files.delete(rulesToExecutePath);
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 					
 					
 				}//nex Run

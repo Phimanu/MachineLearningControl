@@ -37,10 +37,10 @@ def system_utility(mrubis_state):
     return total_utility
 
 def components_utility(mrubis_state, shop_id):
-    component_utilities = {}
-    for comp_attrs in mrubis_state[shop_id].values():
-        component_utilities[comp_attrs['name']] = float(comp_attrs['component_utility'])
-    return component_utilities
+    return {
+        comp_attrs['name']: float(comp_attrs['component_utility'])
+        for comp_attrs in mrubis_state[shop_id].values()
+    }
 
 def get_shop_id(mrubis_state):
     return list(mrubis_state.keys())[0]
@@ -148,15 +148,14 @@ class MRubisController():
     def _pick_first_available_rule(self):
         rules_to_execute = {}
         for shop, issue_to_rule_map in self.available_rules.items():
-            rules_to_execute[shop] = {} # TODO
+            rules_to_execute[shop] = {}
             if isinstance(issue_to_rule_map, dict) and len(issue_to_rule_map.keys()) > 0:
                 for issue, rule_to_cost_map in issue_to_rule_map.items():
                     picked_rule_name = list(rule_to_cost_map['rules'].keys())[0]
                     affected_component_type = rule_to_cost_map['affected_component']
-                    rules_to_execute[shop][issue] = {}
-                    rules_to_execute[shop][issue][affected_component_type] = picked_rule_name
+                    rules_to_execute[shop][issue] = {affected_component_type: picked_rule_name}
             else:
-                rules_to_execute[shop] = 'No issues'
+                rules_to_execute[shop] = {'No issues': 'No issues'}
         return rules_to_execute
 
     def _send_rules_to_execute(self, issue_to_rule_map):
@@ -222,7 +221,6 @@ class MRubisController():
             if self.run_counter == 1:
                 self._parse_initial_state(incoming_state)
                 print('Received the initial mRUBIS state.')
-                print(incoming_state)
             else:
                 self._update_current_state(incoming_state)
 
@@ -236,7 +234,7 @@ class MRubisController():
             self._print_picked_rules(picked_rules)
             self._send_rules_to_execute(picked_rules)
 
-            # TODO: query state of affected components once more
+            print("Getting state after taking action...")
             incoming_state = self._get_mrubis_state(message="get_state_after_taking_action")
             self._update_current_state(incoming_state)
             self._append_current_state_to_history()
@@ -251,4 +249,4 @@ class MRubisController():
 
 if __name__ == "__main__":
     controller = MRubisController()
-    controller.run(external_start=False, max_runs=100)
+    controller.run(external_start=True, max_runs=100)
