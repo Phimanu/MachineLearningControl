@@ -216,13 +216,13 @@ class MRubisController():
             sleep(0.1)
 
             print(f"Getting state {self.run_counter}/{max_runs}...")
-            incoming_state = self._get_mrubis_state(message="get_state_before_taking_action")
+            state_before_action = self._get_mrubis_state(message="get_state_before_taking_action")
 
             if self.run_counter == 1:
-                self._parse_initial_state(incoming_state)
+                self._parse_initial_state(state_before_action)
                 print('Received the initial mRUBIS state.')
             else:
-                self._update_current_state(incoming_state)
+                self._update_current_state(state_before_action)
 
             self._append_current_state_to_history()
             
@@ -235,8 +235,8 @@ class MRubisController():
             self._send_rules_to_execute(picked_rules)
 
             print("Getting state after taking action...")
-            incoming_state = self._get_mrubis_state(message="get_state_after_taking_action")
-            self._update_current_state(incoming_state)
+            state_after_action = self._get_mrubis_state(message="get_state_after_taking_action")
+            self._update_current_state(state_after_action)
             self._append_current_state_to_history()
 
         self._send_exit_message()
