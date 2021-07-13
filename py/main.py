@@ -70,7 +70,6 @@ class MRubisController():
         self.number_of_issues_per_shop = {}
         self.mrubis_state = {}
         self.mrubis_state_history = []
-        self.available_rules = {}
         self.socket = None
         self.mrubis_process = None
 
@@ -92,6 +91,13 @@ class MRubisController():
         self.socket.connect((self.host, self.port))
         print('Connected to the Java side.')
 
+    def _get_initial_state(self):
+        self.number_of_shops = self._get_from_mrubis('get_number_of_shops').get('number_of_shops')
+        for _ in range(self.number_of_shops):
+            shop_state = self._get_from_mrubis('get_initial_state')
+            shop_name = next(iter(shop_state))
+            self.mrubis_state[shop_name] = shop_state[shop_name]
+
     def _get_from_mrubis(self, message):
 
         self.socket.send(f"{message}\n".encode("utf-8"))
@@ -105,60 +111,6 @@ class MRubisController():
             mrubis_state = "not available"
 
         return mrubis_state
-
-    def _identify_available_rules(self):
-        for shop, shop_components in self.mrubis_state.items():
-            self.available_rules[shop] = {}
-            for component_type, component_params in shop_components.items():
-                if component_params.get('failure_name'):
-                    issue = component_params['failure_name']
-                    rules = component_params['rule_names'].strip('[]').split(',')
-                    costs = component_params['rule_costs'].strip('[]').split(',')
-                    self.available_rules[shop][issue] = {}
-                    self.available_rules[shop][issue]['rules'] = {rule:cost for rule, cost in zip(rules, costs)}
-                    self.available_rules[shop][issue]['affected_component'] = component_type if issue != 'CF5' else 'CF5'
-    
-    def _print_available_rules(self):
-        for shop, issue_to_rule_map in self.available_rules.items():
-            print(f"    Shop: {shop}:")
-            if isinstance(issue_to_rule_map, dict):
-                for issue, rule_to_cost_map in issue_to_rule_map.items():
-                    print(f"        Issue: {issue}")
-                    if isinstance(rule_to_cost_map, dict):
-                        for rule, cost in rule_to_cost_map['rules'].items():
-                            print(f"            Rule: {rule} (cost: {cost})")
-                    else:
-                        print(f"            Rule: {rule_to_cost_map}")
-            else:
-                print(f"     {self.available_rules[shop]}")
-
-    def _print_picked_rules(self, picked_rules):
-        for shop, issue_to_rule_map in picked_rules.items():
-            print(f"    Shop: {shop}:")
-            if isinstance(issue_to_rule_map, dict):
-                for issue, rule_to_cost_map in issue_to_rule_map.items():
-                    print(f"        Issue: {issue}")
-                    if isinstance(rule_to_cost_map, dict):
-                        for affected_component, rule in rule_to_cost_map.items():
-                            print(f"            Rule: {rule} (fixes {affected_component})")
-                    else:
-                        print(f"            Rule: {rule_to_cost_map}")
-            else:
-                print(f"     {picked_rules[shop]}")
-
-
-    def _pick_first_available_rule(self):
-        rules_to_execute = {}
-        for shop, issue_to_rule_map in self.available_rules.items():
-            rules_to_execute[shop] = {}
-            if isinstance(issue_to_rule_map, dict) and len(issue_to_rule_map.keys()) > 0:
-                for issue, rule_to_cost_map in issue_to_rule_map.items():
-                    picked_rule_name = list(rule_to_cost_map['rules'].keys())[0]
-                    affected_component_type = rule_to_cost_map['affected_component']
-                    rules_to_execute[shop][issue] = {affected_component_type: picked_rule_name}
-            else:
-                rules_to_execute[shop] = {'No issues': 'No issues'}
-        return rules_to_execute
 
     def _send_rules_to_execute(self, issue_to_rule_map):
         print('Sending selected rules to mRUBIS...')
@@ -188,14 +140,6 @@ class MRubisController():
         mrubis_df.to_csv(f'{filename}.csv')
         mrubis_df.to_excel(f'{filename}.xls')
 
-    def _parse_initial_state(self, initial_state):
-        for shop, shop_components in initial_state.items():
-            self.mrubis_state[shop] = {}
-            for component_type, component_params in shop_components.items():
-                self.mrubis_state[shop][component_type] = {}
-                for param, value in component_params.items():
-                    self.mrubis_state[shop][component_type][param] = value
-
     def _update_current_state(self, incoming_state):
         for shop, shop_components in incoming_state.items():
             for component_type, component_params in shop_components.items():
@@ -212,7 +156,9 @@ class MRubisController():
                 print('MRUBIS is running')
 
         self._connect_to_java()
-        
+
+        # TODO: explain design decisions in comments
+
         while self.run_counter < max_runs:
             self.run_counter += 1
             sleep(0.1)
@@ -220,15 +166,12 @@ class MRubisController():
             print(f"Getting state {self.run_counter}/{max_runs}...")
 
             if self.run_counter == 1:
-                self.number_of_shops = self._get_from_mrubis('get_number_of_shops').get('number_of_shops')
-                for _ in range(self.number_of_shops):
-                    shop_state = self._get_from_mrubis('get_initial_state')
-                    shop_name = next(iter(shop_state))
-                    self.mrubis_state[shop_name] = shop_state[shop_name]
+                self._get_initial_state()
 
-            issues_handled_in_this_run = 0
+            components_fixed_in_this_run = {}
+            number_of_issues_handled_in_this_run = 0
             total_number_of_issues = 1 # make sure that the loop runs at least once
-            while issues_handled_in_this_run < total_number_of_issues:
+            while number_of_issues_handled_in_this_run < total_number_of_issues:
                 self.number_of_issues_per_shop = self._get_from_mrubis('get_number_of_issues_per_shop')
                 total_number_of_issues = sum(self.number_of_issues_per_shop.values())
                 print(f'There are {total_number_of_issues} issues to handle')
@@ -241,16 +184,20 @@ class MRubisController():
                 available_rules = component_params['rule_names'].strip('[]').split(',')
                 rule_costs = component_params['rule_costs'].strip('[]').split(',')
                 picked_rule = available_rules[0]
-                if issue_name == 'CF5':
-                    component_name = 'CF5'
+                print(f"{shop_name}: Handling {issue_name} on {component_name} with {picked_rule}")
                 picked_rule_message = {shop_name: {issue_name: {component_name: picked_rule}}}
                 self._send_rules_to_execute(picked_rule_message)
-                issues_handled_in_this_run += 1
 
+                if components_fixed_in_this_run.get(shop_name) is None:
+                    components_fixed_in_this_run[shop_name] = []
+                components_fixed_in_this_run[shop_name].append(component_name)
+                number_of_issues_handled_in_this_run += 1
+
+            print(f'Applied actions to these components in this run: {components_fixed_in_this_run}')
             self._append_current_state_to_history()
 
-            print("Getting state after taking action...")
-            state_after_action = self._get_from_mrubis(message="get_state_after_taking_action")
+            print("Getting state of affected components after taking action...")
+            state_after_action = self._get_from_mrubis(message=json.dumps(components_fixed_in_this_run))
             self._update_current_state(state_after_action)
             self._append_current_state_to_history()
 

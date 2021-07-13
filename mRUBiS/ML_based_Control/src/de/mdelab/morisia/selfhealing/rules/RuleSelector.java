@@ -123,16 +123,16 @@ public class RuleSelector {
 		
 	}
 
-	
-
 
 	private static void learningApproach(Issue issue, Utilityfunction uTILITY_FUNCTION) {
-		// read utility increase 
+		
+		// read utility increase (make sure that rules are available)
 		UtilityIncreasePredictor.calculateCombinedUtilityIncrease(issue);
 		
 		Architecture architecture = issue.getAnnotations().getArchitecture();
 		
 		if (!initialStateSent) {
+			
 			sendNumberOfShopsToPython(architecture);
 			
 			for (Tenant tenant: architecture.getTenants()) {
@@ -146,7 +146,6 @@ public class RuleSelector {
 		sendNumberOfIssuesPerShopToPython(architecture);
 		sendCurrentIssueToPython(issue);
 		getRuleFromPython(issue);
-		
 		Input.selectAction(issue);
 		
 	}
@@ -230,6 +229,7 @@ public class RuleSelector {
 		
 		// Break the mRUBIS loop if exit signal received from Python
 		if (fromPython.equals("exit")) {
+			System.out.println("Received 'exit' signal from Python, exiting...");
 			System.exit(1);
 		}
 		
@@ -239,18 +239,6 @@ public class RuleSelector {
 	private static void sendCurrentIssueToPython(Issue issue) {
 		
 		ensureSocketIsOpen();
-		
-		/*
-		 * Send state to python and receive the actions (rules) to apply
-		 */
-		
-		// one initial state (very first run)
-		// update each component on issue
-		
-		// get the total number of (remaining) issues and send to python
-		// send one issue -> one component
-		// receive one action
-		// execute that action
 		
 		// Read json file generated in UtilityIncreasePredictor
 		ObjectMapper mapper = new ObjectMapper();

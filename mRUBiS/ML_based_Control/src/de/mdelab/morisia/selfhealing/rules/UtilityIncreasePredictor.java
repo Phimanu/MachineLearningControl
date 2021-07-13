@@ -255,19 +255,9 @@ public class UtilityIncreasePredictor {
 		String affectedComponent = issue.getAffectedComponent().getType().getName();
 		compToRulesMap.put(affectedComponent, ruleToCostsMap);
 		
-		// json storing needs to stay
-		// create new json for each issue
-		
-		System.out.println("");
-		System.out.println("UIP: Current failure name: " + issueName);
-		System.out.println("UIP: Current affected component: " + affectedComponent);
-		
 		try {
 			Path jsonFile = Paths.get("issueToRulesMap.json");
-			ObjectMapper mapper = new ObjectMapper(); 
-//			if (Files.exists(jsonFile)) {
-//				issueToCompToRulesMap = mapper.readValue(jsonFile.toFile(), HashMap.class);
-//			}
+			ObjectMapper mapper = new ObjectMapper();
 			issueToCompToRulesMap.put(issueName, compToRulesMap);
 			mapper.writeValue(jsonFile.toFile(), issueToCompToRulesMap);
 		} catch (JsonProcessingException e) {

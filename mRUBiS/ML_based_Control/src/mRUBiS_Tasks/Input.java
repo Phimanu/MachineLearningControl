@@ -19,7 +19,7 @@ public static void selectAction(Issue issue) {
 	    String shopName = issue.getAffectedComponent().getTenant().getName();
 	    String componentType = issue.getAffectedComponent().getType().getName();
 		
-		// Read rules to execute from JSON (received and stored in Task 1)
+		// Read rules to execute from JSON (received and stored RuleSelector)
 		Path rulesToExecutePath= Paths.get("rulesToExecute.json");
 		HashMap<String, HashMap<String, HashMap<String, String>>> rulesToExecute = new HashMap<String, HashMap<String, HashMap<String, String>>>();
 		try {
@@ -28,17 +28,8 @@ public static void selectAction(Issue issue) {
 			e.printStackTrace();
 		}
 		
-		System.out.println("Current issue: " + issueName);
 		String actionToExecute = "";
-		if (issueName.equals("CF5")) {
-			actionToExecute = rulesToExecute.get(shopName).get(issueName).get(issueName);
-		}
-		else {
-			actionToExecute = rulesToExecute.get(shopName).get(issueName).get(componentType);	
-		}
-		
-		System.out.println("Action to execute: " + actionToExecute);
-		System.out.println("Action component: " + componentType);
+		actionToExecute = rulesToExecute.get(shopName).get(issueName).get(componentType);
 		
 		//Remove all the other possible actions
 		List<Rule> actionsToRemove= new LinkedList<Rule>();

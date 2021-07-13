@@ -283,7 +283,6 @@ public class Task_1 {
 //						
 //						else //Udriven and Learning
 //							{
-//							
 //							allIssues.sort(issueComparator);
 //						}
 						
@@ -392,19 +391,29 @@ public class Task_1 {
 					}
 
 
-					System.out.println("Waiting for Python to send get_state_after_taking_action message...");
+					System.out.println("Waiting for Python to send fixed components JSON...");
 					String fromPython = "";
 					while(true) {
 						fromPython = RuleSelector.in.readLine();
-
-						if (fromPython.equals("get_state_after_taking_action")) {
+						
+						try {
+							// get components fixed in this run from python
+							HashMap<String, List<String>> fixedComponents = new HashMap<String, List<String>>();
+							fixedComponents = new ObjectMapper().readValue(fromPython, HashMap.class);
+							
+							// lookup their current state and send to python
 							String state = "not_available";
-							state = Observations.getStatusAfterTakingAction(architecture, issueToRulesMapFromFile);
+							state = Observations.getFixedComponentStatus(architecture, fixedComponents);
 							RuleSelector.out.println(state);
 							RuleSelector.logger.println(state);
 							break;
+						} catch (IOException e) {
+							System.out.println("Did not receive valid json from Python:");
+							System.out.println(fromPython);
 						}
+
 					}
+					
 
 					annotations.getIssues().clear();
 					annotations.getRules().clear();
