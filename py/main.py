@@ -94,6 +94,7 @@ class MRubisController():
         print(f"{shop_name}: Handling {issue_name} on {component_name} with {rule}")
         print('Sending selected rule to mRUBIS...')
         self.socket.send((json.dumps(picked_rule_message)  + '\n').encode("utf-8"))
+        print("Waiting for mRUBIS to answer with 'rule_received'...")
         data = self.socket.recv(64000)
         if data.decode('utf-8').strip() == 'rule_received':
             print('Rule transmitted successfully.')
@@ -133,8 +134,6 @@ class MRubisController():
             self._start_mrubis()
             if self.mrubis_process.poll is None:
                 print('MRUBIS is running')
-
-        sleep(0.5)
 
         self._connect_to_java()
 
@@ -188,4 +187,4 @@ class MRubisController():
 
 if __name__ == "__main__":
     controller = MRubisController()
-    controller.run(external_start=True, max_runs=1000)
+    controller.run(external_start=True, max_runs=100)

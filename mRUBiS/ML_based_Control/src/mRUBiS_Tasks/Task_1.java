@@ -410,6 +410,7 @@ public class Task_1 {
 						} catch (IOException e) {
 							System.out.println("Did not receive valid json from Python:");
 							System.out.println(fromPython);
+							continue;
 						}
 
 					}
