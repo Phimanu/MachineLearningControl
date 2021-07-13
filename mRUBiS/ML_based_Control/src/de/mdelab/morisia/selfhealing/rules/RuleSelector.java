@@ -32,6 +32,7 @@ import de.mdelab.morisia.comparch.RemoveReplica;
 import de.mdelab.morisia.comparch.ReplaceComponent;
 import de.mdelab.morisia.comparch.RestartComponent;
 import de.mdelab.morisia.comparch.Rule;
+import de.mdelab.morisia.comparch.Tenant;
 import de.mdelab.morisia.selfhealing.Approaches;
 import de.mdelab.morisia.selfhealing.Evaluation_ML;
 import de.mdelab.morisia.selfhealing.LearningModel;
@@ -57,6 +58,7 @@ public class RuleSelector {
     private static Path issueToRulesPath = Paths.get("issueToRulesMap.json"); // issues, affected components and associated rules;
     private static Path rulesToExecutePath= Paths.get("rulesToExecute.json"); // rules to execute on this run
     private static int run = 1;
+    private static Boolean initialStateSent = false;
     
     private static void ensureSocketIsOpen() {
     	if (server == null || (server != null && !server.isBound())) {
@@ -128,20 +130,128 @@ public class RuleSelector {
 		// read utility increase 
 		UtilityIncreasePredictor.calculateCombinedUtilityIncrease(issue);
 		
-		communicateWithPython(issue);
+		Architecture architecture = issue.getAnnotations().getArchitecture();
+		
+		if (!initialStateSent) {
+			sendNumberOfShopsToPython(architecture);
+			
+			for (Tenant tenant: architecture.getTenants()) {
+				sendInitialStateToPython(tenant);
+			}
+			
+			initialStateSent = true;
+			
+		}
+		
+		sendNumberOfIssuesPerShopToPython(architecture);
+		sendCurrentIssueToPython(issue);
+		getRuleFromPython(issue);
 		
 		Input.selectAction(issue);
 		
 	}
 	
 	
-	private static void communicateWithPython(Issue issue) {
+	private static void sendNumberOfShopsToPython(Architecture architecture) {
+		ensureSocketIsOpen();
+		
+		String fromPython = "";
+		System.out.println("Waiting for Python to send 'get_number_of_shops'...");
+		while(true) { 
+			try {
+				fromPython = in.readLine();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			if (fromPython.equals("get_number_of_shops")) {
+				String state = "not_available";
+				state = Observations.getNumberOfShops(architecture);
+				out.println(state);
+				logger.println(state);
+				break;
+			}
+		}
+	}
+	
+	
+	private static void sendInitialStateToPython(Tenant shop) {
+		
+		ensureSocketIsOpen();
+		
+		String fromPython = "";
+		System.out.println("Waiting for Python to send 'get_initial_state'...");
+		while(true) { 
+			try {
+				fromPython = in.readLine();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			if (fromPython.equals("get_initial_state")) {
+				String state = "not_available";
+				state = Observations.getInitialState(shop);
+				out.println(state);
+				logger.println(state);
+				break;
+			}
+		}
+	}
+	
+	
+	private static void sendNumberOfIssuesPerShopToPython(Architecture architecture) {
+		
+		ensureSocketIsOpen();
+		
+		String fromPython = "";
+		System.out.println("Waiting for Python to send 'get_number_of_issues_per_shop'...");
+		while(true) { 
+			try {
+				fromPython = in.readLine();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			if (fromPython.equals("get_number_of_issues_per_shop")) {
+				String state = "not_available";
+				state = Observations.getNumberOfIssuesPerShop(architecture);
+				out.println(state);
+				logger.println(state);
+				break;
+			}  else if (fromPython.equals("exit")) {
+				logger.println("closed");
+				out.close();
+				logger.close();
+				try {
+					server.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				break;
+			}
+		}
+		
+		// Break the mRUBIS loop if exit signal received from Python
+		if (fromPython.equals("exit")) {
+			System.exit(1);
+		}
+		
+	}
+	
+	
+	private static void sendCurrentIssueToPython(Issue issue) {
 		
 		ensureSocketIsOpen();
 		
 		/*
 		 * Send state to python and receive the actions (rules) to apply
 		 */
+		
+		// one initial state (very first run)
+		// update each component on issue
+		
+		// get the total number of (remaining) issues and send to python
+		// send one issue -> one component
+		// receive one action
+		// execute that action
+		
 		// Read json file generated in UtilityIncreasePredictor
 		ObjectMapper mapper = new ObjectMapper();
 		HashMap<String, HashMap<String, HashMap<String, Double>>> issueToRulesMapFromFile = null;
@@ -154,41 +264,28 @@ public class RuleSelector {
 		// send current state to the python side
 		Architecture architecture = issue.getAnnotations().getArchitecture();
 		String fromPython = "";
-		System.out.println("Waiting for Python to send get_state_before_taking_action message...");
+		System.out.println("Waiting for Python to send 'get_issue'...");
 		while(true) { 
 			try {
 				fromPython = in.readLine();
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
-
-			if (fromPython.equals("get_state_before_taking_action")) {
+			if (fromPython.equals("get_issue")) {
 				String state = "not_available";
-				state = Observations.getCurrentState(architecture, issueToRulesMapFromFile);
+				state = Observations.getAffectedComponentStatus(architecture, issueToRulesMapFromFile);
 				out.println(state);
 				logger.println(state);
 				break;
-			} else if (fromPython.equals("exit")) {
-				logger.println("closed");
-				out.close();
-				logger.close();
-				try {
-					server.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				break;
 			}
 		}
-
-
-		// Break the mRUBIS loop if exit signal received from Python
-		if (fromPython.equals("exit")) {
-			System.exit(1);
-		}
-
+		
+	}
+		
+	private static void getRuleFromPython (Issue issue) {
 		// Get the rules to execute from the python side
 		System.out.println("Waiting for rules from Python side...");
+		String fromPython = "";
 		while(true) {
 			try {
 				fromPython = in.readLine();
@@ -224,7 +321,7 @@ public class RuleSelector {
 				}
 			}
 
-		}	
+		}
 	}
 
 	

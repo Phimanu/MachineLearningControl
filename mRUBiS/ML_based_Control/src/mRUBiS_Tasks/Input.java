@@ -38,6 +38,7 @@ public static void selectAction(Issue issue) {
 		}
 		
 		System.out.println("Action to execute: " + actionToExecute);
+		System.out.println("Action component: " + componentType);
 		
 		//Remove all the other possible actions
 		List<Rule> actionsToRemove= new LinkedList<Rule>();

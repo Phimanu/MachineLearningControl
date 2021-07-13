@@ -277,15 +277,15 @@ public class Task_1 {
 					
 
 
-					if (CURRENT_APPROACH == Approaches.RANDOM) 
-						{shuffle(allIssues);}
-					
-						
-						else //Udriven and Learning
-							{
-							
-							allIssues.sort(issueComparator);
-						}
+//					if (CURRENT_APPROACH == Approaches.RANDOM) 
+//						{shuffle(allIssues);}
+//					
+//						
+//						else //Udriven and Learning
+//							{
+//							
+//							allIssues.sort(issueComparator);
+//						}
 						
 
 					

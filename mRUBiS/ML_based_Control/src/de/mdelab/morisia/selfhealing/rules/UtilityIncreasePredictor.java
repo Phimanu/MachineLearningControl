@@ -240,6 +240,7 @@ public class UtilityIncreasePredictor {
 			
 		}
 		
+		String issueName = issue.getClass().getSimpleName().replaceAll("Impl", "");
 		List<Rule> availableRules = issue.getHandledBy();
 		
 		// store in the following way: issue->affectedComponent->{rules:costs}
@@ -254,13 +255,19 @@ public class UtilityIncreasePredictor {
 		String affectedComponent = issue.getAffectedComponent().getType().getName();
 		compToRulesMap.put(affectedComponent, ruleToCostsMap);
 		
+		// json storing needs to stay
+		// create new json for each issue
+		
+		System.out.println("");
+		System.out.println("UIP: Current failure name: " + issueName);
+		System.out.println("UIP: Current affected component: " + affectedComponent);
+		
 		try {
 			Path jsonFile = Paths.get("issueToRulesMap.json");
 			ObjectMapper mapper = new ObjectMapper(); 
-			if (Files.exists(jsonFile)) {
-				issueToCompToRulesMap = mapper.readValue(jsonFile.toFile(), HashMap.class);
-			}
-			String issueName = issue.getClass().getSimpleName().replaceAll("Impl", "");
+//			if (Files.exists(jsonFile)) {
+//				issueToCompToRulesMap = mapper.readValue(jsonFile.toFile(), HashMap.class);
+//			}
 			issueToCompToRulesMap.put(issueName, compToRulesMap);
 			mapper.writeValue(jsonFile.toFile(), issueToCompToRulesMap);
 		} catch (JsonProcessingException e) {
@@ -268,9 +275,6 @@ public class UtilityIncreasePredictor {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-
-
 	}
 
 	

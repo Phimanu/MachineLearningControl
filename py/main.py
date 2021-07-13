@@ -66,6 +66,8 @@ class MRubisController():
         ]
 
         self.run_counter = 0
+        self.number_of_shops = 0
+        self.number_of_issues_per_shop = {}
         self.mrubis_state = {}
         self.mrubis_state_history = []
         self.available_rules = {}
@@ -90,7 +92,7 @@ class MRubisController():
         self.socket.connect((self.host, self.port))
         print('Connected to the Java side.')
 
-    def _get_mrubis_state(self, message):
+    def _get_from_mrubis(self, message):
 
         self.socket.send(f"{message}\n".encode("utf-8"))
         data = self.socket.recv(64000)
@@ -216,26 +218,39 @@ class MRubisController():
             sleep(0.1)
 
             print(f"Getting state {self.run_counter}/{max_runs}...")
-            state_before_action = self._get_mrubis_state(message="get_state_before_taking_action")
 
             if self.run_counter == 1:
-                self._parse_initial_state(state_before_action)
-                print('Received the initial mRUBIS state.')
-            else:
-                self._update_current_state(state_before_action)
+                self.number_of_shops = self._get_from_mrubis('get_number_of_shops').get('number_of_shops')
+                for _ in range(self.number_of_shops):
+                    shop_state = self._get_from_mrubis('get_initial_state')
+                    shop_name = next(iter(shop_state))
+                    self.mrubis_state[shop_name] = shop_state[shop_name]
+
+            issues_handled_in_this_run = 0
+            total_number_of_issues = 1 # make sure that the loop runs at least once
+            while issues_handled_in_this_run < total_number_of_issues:
+                self.number_of_issues_per_shop = self._get_from_mrubis('get_number_of_issues_per_shop')
+                total_number_of_issues = sum(self.number_of_issues_per_shop.values())
+                print(f'There are {total_number_of_issues} issues to handle')
+                current_issue = self._get_from_mrubis('get_issue')
+                self._update_current_state(current_issue)
+                shop_name = next(iter(current_issue))
+                component_name = next(iter(current_issue[shop_name]))
+                component_params = current_issue.get(shop_name).get(component_name)
+                issue_name = component_params.get('failure_name')
+                available_rules = component_params['rule_names'].strip('[]').split(',')
+                rule_costs = component_params['rule_costs'].strip('[]').split(',')
+                picked_rule = available_rules[0]
+                if issue_name == 'CF5':
+                    component_name = 'CF5'
+                picked_rule_message = {shop_name: {issue_name: {component_name: picked_rule}}}
+                self._send_rules_to_execute(picked_rule_message)
+                issues_handled_in_this_run += 1
 
             self._append_current_state_to_history()
-            
-            self._identify_available_rules()
-            print("Available rules:")
-            self._print_available_rules()
-            picked_rules = self._pick_first_available_rule()
-            print(f"Chosen rule:")
-            self._print_picked_rules(picked_rules)
-            self._send_rules_to_execute(picked_rules)
 
             print("Getting state after taking action...")
-            state_after_action = self._get_mrubis_state(message="get_state_after_taking_action")
+            state_after_action = self._get_from_mrubis(message="get_state_after_taking_action")
             self._update_current_state(state_after_action)
             self._append_current_state_to_history()
 
