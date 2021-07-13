@@ -288,9 +288,9 @@ public class RuleSelector {
 				ObjectMapper fromPythonMapper = new ObjectMapper();
 				rulesToExecute = new ObjectMapper().readValue(fromPython, HashMap.class);
 				fromPythonMapper.writeValue(rulesToExecutePath.toFile(), rulesToExecute);
-				out.println("rules_received");
+				out.println("rule_received");
 				logger.println(rulesToExecute);
-				System.out.println("Rules received: " + rulesToExecute);
+				System.out.println("Rule received: " + rulesToExecute);
 				break;
 
 			} catch (IOException e) {

@@ -5,46 +5,6 @@ from subprocess import PIPE, Popen
 from time import sleep
 import pandas as pd
 
-'''
-def components_status():
-    #Map<Shop_id, Component_type, CF_x> # does the ID change upon restarting? # issues lists seem to be empty / no comp_utility of 0
-
-def components_utility():
-    #Map<Component_type, Map<Param_1, ..., Param_N, Utility, shop_id>
-
-def component_actions_costs():
-    #Map<Component_type, CF_x, Action, cost, shop_id>
-
-def get_environment_type():
-    #Environment_type
-
-def fix_component():
-
-    #input: Map<Shop_id, Component_type, CF, action>
-    #bool
-    #[This will transition mRuBis to the next RUN]
-
-def load_model():
-    #
-'''
-
-def system_utility(mrubis_state):
-    '''Calculates the utility for the entire system (across shops)'''
-    total_utility = 0
-    for shop_attrs in mrubis_state.values():
-        for comp_attrs in shop_attrs.values():
-            total_utility += float(comp_attrs['component_utility'])
-    return total_utility
-
-def components_utility(mrubis_state, shop_id):
-    return {
-        comp_attrs['name']: float(comp_attrs['component_utility'])
-        for comp_attrs in mrubis_state[shop_id].values()
-    }
-
-def get_shop_id(mrubis_state):
-    return list(mrubis_state.keys())[0]
-
 class MRubisController():
 
     def __init__(self, host='localhost', port=8080, json_path='path.json') -> None:
@@ -68,6 +28,7 @@ class MRubisController():
         self.run_counter = 0
         self.number_of_shops = 0
         self.number_of_issues_per_shop = {}
+        self.current_issue = {}
         self.mrubis_state = {}
         self.mrubis_state_history = []
         self.socket = None
@@ -101,6 +62,7 @@ class MRubisController():
     def _get_from_mrubis(self, message):
 
         self.socket.send(f"{message}\n".encode("utf-8"))
+        print(f'Waiting for mRUBIS to answer to message {message}')
         data = self.socket.recv(64000)
 
         try:
@@ -112,12 +74,29 @@ class MRubisController():
 
         return mrubis_state
 
-    def _send_rules_to_execute(self, issue_to_rule_map):
-        print('Sending selected rules to mRUBIS...')
-        self.socket.send((json.dumps(issue_to_rule_map)  + '\n').encode("utf-8"))
+    @staticmethod
+    def _get_info_from_issue(issue):
+        shop_name = next(iter(issue))
+        component_name = next(iter(issue[shop_name]))
+        component_params = issue.get(shop_name).get(component_name)
+        issue_name = component_params.get('failure_name')
+        rules = component_params['rule_names'].strip('[]').split(',')
+        rule_costs = component_params['rule_costs'].strip('[]').split(',')
+        return shop_name, component_name, component_params, issue_name, rules, rule_costs
+
+    @staticmethod
+    def _pick_rule(issue, rules, rule_costs):
+        return rules[0]
+
+    def _send_rule_to_execute(self, issue, rule):
+        shop_name, component_name, _, issue_name, _, _ = self._get_info_from_issue(issue)
+        picked_rule_message = {shop_name: {issue_name: {component_name: rule}}}
+        print(f"{shop_name}: Handling {issue_name} on {component_name} with {rule}")
+        print('Sending selected rule to mRUBIS...')
+        self.socket.send((json.dumps(picked_rule_message)  + '\n').encode("utf-8"))
         data = self.socket.recv(64000)
-        if data.decode('utf-8').strip() == 'rules_received':
-            print('Rules transmitted successfully.')
+        if data.decode('utf-8').strip() == 'rule_received':
+            print('Rule transmitted successfully.')
 
     def _send_exit_message(self):
         self.socket.send("exit\n".encode("utf-8"))
@@ -155,6 +134,8 @@ class MRubisController():
             if self.mrubis_process.poll is None:
                 print('MRUBIS is running')
 
+        sleep(0.5)
+
         self._connect_to_java()
 
         # TODO: explain design decisions in comments
@@ -172,21 +153,17 @@ class MRubisController():
             number_of_issues_handled_in_this_run = 0
             total_number_of_issues = 1 # make sure that the loop runs at least once
             while number_of_issues_handled_in_this_run < total_number_of_issues:
+
                 self.number_of_issues_per_shop = self._get_from_mrubis('get_number_of_issues_per_shop')
                 total_number_of_issues = sum(self.number_of_issues_per_shop.values())
-                print(f'There are {total_number_of_issues} issues to handle')
+                print(f'Total number of issues to handle in current run: {total_number_of_issues}')
+
                 current_issue = self._get_from_mrubis('get_issue')
                 self._update_current_state(current_issue)
-                shop_name = next(iter(current_issue))
-                component_name = next(iter(current_issue[shop_name]))
-                component_params = current_issue.get(shop_name).get(component_name)
-                issue_name = component_params.get('failure_name')
-                available_rules = component_params['rule_names'].strip('[]').split(',')
-                rule_costs = component_params['rule_costs'].strip('[]').split(',')
-                picked_rule = available_rules[0]
-                print(f"{shop_name}: Handling {issue_name} on {component_name} with {picked_rule}")
-                picked_rule_message = {shop_name: {issue_name: {component_name: picked_rule}}}
-                self._send_rules_to_execute(picked_rule_message)
+
+                shop_name, component_name, _, _, rules, rule_costs = self._get_info_from_issue(current_issue)
+                picked_rule = self._pick_rule(current_issue, rules, rule_costs)
+                self._send_rule_to_execute(current_issue, picked_rule)
 
                 if components_fixed_in_this_run.get(shop_name) is None:
                     components_fixed_in_this_run[shop_name] = []
@@ -211,4 +188,4 @@ class MRubisController():
 
 if __name__ == "__main__":
     controller = MRubisController()
-    controller.run(external_start=True, max_runs=100)
+    controller.run(external_start=True, max_runs=1000)
