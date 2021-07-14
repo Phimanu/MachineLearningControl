@@ -201,14 +201,14 @@ public class RuleSelector {
 		ensureSocketIsOpen();
 		
 		String fromPython = "";
-		System.out.println("Waiting for Python to send 'get_number_of_issues_per_shop'...");
+		System.out.println("Waiting for Python to send 'get_number_of_issues_in_run'...");
 		while(true) { 
 			try {
 				fromPython = in.readLine();
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
-			if (fromPython.equals("get_number_of_issues_per_shop")) {
+			if (fromPython.equals("get_number_of_issues_in_run")) {
 				String state = "not_available";
 				state = Observations.getNumberOfIssuesPerShop(architecture);
 				out.println(state);
@@ -242,7 +242,7 @@ public class RuleSelector {
 		
 		// Read json file generated in UtilityIncreasePredictor
 		ObjectMapper mapper = new ObjectMapper();
-		HashMap<String, HashMap<String, HashMap<String, Double>>> issueToRulesMapFromFile = null;
+		HashMap<String, HashMap<String, HashMap<String, HashMap<String, Double>>>> issueToRulesMapFromFile = null;
 		try {
 			issueToRulesMapFromFile = mapper.readValue(issueToRulesPath.toFile(), HashMap.class);
 		} catch (IOException e2) {

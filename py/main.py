@@ -54,10 +54,15 @@ class MRubisController():
 
     def _get_initial_state(self):
         self.number_of_shops = self._get_from_mrubis('get_number_of_shops').get('number_of_shops')
+        print(f'Number of mRUBIS shops: {self.number_of_shops}')
         for _ in range(self.number_of_shops):
             shop_state = self._get_from_mrubis('get_initial_state')
             shop_name = next(iter(shop_state))
             self.mrubis_state[shop_name] = shop_state[shop_name]
+
+    def _update_number_of_issues_in_run(self):
+        self.number_of_issues_in_run = self._get_from_mrubis('get_number_of_issues_in_run').get('number_of_issues_in_run')
+        print(f'Total number of issues to handle in current run: {self.number_of_issues_in_run}')
 
     def _get_from_mrubis(self, message):
 
@@ -149,12 +154,10 @@ class MRubisController():
 
             components_fixed_in_this_run = {}
             number_of_issues_handled_in_this_run = 0
-            total_number_of_issues = 1 # make sure that the loop runs at least once
-            while number_of_issues_handled_in_this_run < total_number_of_issues:
+            self.number_of_issues_in_run = 1 # make sure that the loop runs at least once
+            while number_of_issues_handled_in_this_run < self.number_of_issues_in_run:
 
-                self.number_of_issues_per_shop = self._get_from_mrubis('get_number_of_issues_per_shop')
-                total_number_of_issues = sum(self.number_of_issues_per_shop.values())
-                print(f'Total number of issues to handle in current run: {total_number_of_issues}')
+                self._update_number_of_issues_in_run()
 
                 current_issue = self._get_from_mrubis('get_issue')
                 self._update_current_state(current_issue)

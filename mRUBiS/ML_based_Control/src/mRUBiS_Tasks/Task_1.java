@@ -54,6 +54,7 @@ import de.mdelab.morisia.comparch.simulator.Capability;
 import de.mdelab.morisia.comparch.simulator.ComparchSimulator;
 import de.mdelab.morisia.comparch.simulator.InjectionStrategy;
 import de.mdelab.morisia.comparch.simulator.impl.Trace_1;
+import de.mdelab.morisia.comparch.simulator.impl.Trace_2;
 import de.mdelab.morisia.comparch.simulator.impl.testTrace;
 import de.mdelab.morisia.selfhealing.incremental.EventListener;
 import de.mdelab.morisia.selfhealing.incremental.EventQueue;
@@ -194,7 +195,7 @@ public class Task_1 {
 			 */
 			Resource architectureResource = EnvSetUp
 					
-					.loadFreshInstance("model/enriched/mRUBiS-1shop_enriched.comparch");
+					.loadFreshInstance("model/enriched/mRUBiS-10shop_enriched.comparch");
 																								
 																								
 	
@@ -223,7 +224,7 @@ public class Task_1 {
 			ComparchSimulator simulator = ComparchSimulator.FACTORY.createSimulator(Capability.SELF_REPAIR,
 					architecture, RUNS, Level.CONFIG, logFile, logToConsole);
 					//InjectionStrategy strategy = new testTrace
-			InjectionStrategy strategy = new Trace_1
+			InjectionStrategy strategy = new Trace_2
 					(simulator.getSupportedIssueTypes(), architecture);
 			simulator.setInjectionStrategy(strategy);
 
