@@ -45,6 +45,7 @@ import de.mdelab.morisia.comparch.simulator.Capability;
 import de.mdelab.morisia.comparch.simulator.ComparchSimulator;
 import de.mdelab.morisia.comparch.simulator.InjectionStrategy;
 import de.mdelab.morisia.comparch.simulator.impl.testTrace;
+import de.mdelab.morisia.comparch.simulator.impl.Trace_2;
 import de.mdelab.morisia.comparch.simulator.impl.ValidationInjectionStrategy;
 import de.mdelab.morisia.selfhealing.incremental.EventListener;
 import de.mdelab.morisia.selfhealing.incremental.EventQueue;
@@ -65,8 +66,8 @@ import mRUBiS.Observations.Observations;
 
 public class TrainingWithmRUBiS {
 
- // public static Approaches CURRENT_APPROACH = Approaches.Udriven;
-  public static Approaches CURRENT_APPROACH = Approaches.RANDOM;
+  public static Approaches CURRENT_APPROACH = Approaches.Udriven;
+  //public static Approaches CURRENT_APPROACH = Approaches.RANDOM;
   
  // public static Approaches CURRENT_APPROACH = Approaches.Learning;
 	public static Utilityfunction UTILITY_FUNCTION = Utilityfunction.Combined;
@@ -76,10 +77,10 @@ public class TrainingWithmRUBiS {
 	public static FileWriter MLfileReP = null;
 	public static FileWriter MLValidation = null;
 	private final static int ROUNDS = 1; // 100; // 25
-	private final static int RUNS = 200; // 1000
+	private final static int RUNS = 1; // 1000
 
 	private final static String SEP = ",";
-	private final static boolean excel = true;
+	private final static boolean excel = false;
 	private final static boolean Validation = false;
 	private final static boolean optimal = true;
 	
@@ -223,7 +224,7 @@ public class TrainingWithmRUBiS {
 			 */
 			Resource architectureResource = EnvSetUp
 					// .loadFreshInstance("model/mRUBiS-100Saturation.comparch");
-					.loadFreshInstance("model/enriched/mRUBiS-1shop_enriched.comparch");// ALL
+					.loadFreshInstance("model/enriched/mRUBiS-10shop_enriched.comparch");// ALL
 																								// Final
 																								// results
 			// .loadFreshInstance("model/mRUBiS-100ML_adjustedReq.comparch");
@@ -253,7 +254,7 @@ public class TrainingWithmRUBiS {
 			boolean logToConsole = false;
 			ComparchSimulator simulator = ComparchSimulator.FACTORY.createSimulator(Capability.SELF_REPAIR,
 					architecture, RUNS, Level.CONFIG, logFile, logToConsole);
-					InjectionStrategy strategy = new testTrace
+					InjectionStrategy strategy = new Trace_2
 					(simulator.getSupportedIssueTypes(), architecture);
 			simulator.setInjectionStrategy(strategy);
 
@@ -302,6 +303,17 @@ public class TrainingWithmRUBiS {
 					long start_A = System.nanoTime();
 					analyze(interpreter, annotations, A_CF1, A_CF2, A_CF3, A_CF5);
 					sum_nano_time_A += System.nanoTime() - start_A;
+					
+					for(Issue issue:architecture.getAnnotations().getIssues() )
+					{
+						 System.out.printf("\n Comp  " + issue.getAffectedComponent().getType().getName());
+						 System.out.printf("\n in Shop   " + issue.getAffectedComponent().getTenant().getName());
+						 
+						 
+					}
+					
+					
+					
 					 //System.out.printf("\n Analyze detects "+ annotations.getIssues().size()+" issues");
 					System.out.printf("\n -----After Analyze \n\n");
 					 ArchitectureUtilCal.computeOverallUtility(architecture);
