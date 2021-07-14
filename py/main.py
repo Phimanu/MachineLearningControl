@@ -140,6 +140,8 @@ class MRubisController():
             if self.mrubis_process.poll() is None:
                 print('MRUBIS is running')
 
+        sleep(0.5)
+
         self._connect_to_java()
 
         # TODO: explain design decisions in comments
