@@ -38,7 +38,7 @@ class MRubisController():
         self.mrubis_process = Popen(
             self.launch_args, 
             stdin=PIPE, 
-            stdout=PIPE, 
+            stdout=PIPE,
             shell=False,
             cwd="../mRUBiS/ML_based_Control"
         )
@@ -132,7 +132,7 @@ class MRubisController():
 
         if not external_start:
             self._start_mrubis()
-            if self.mrubis_process.poll is None:
+            if self.mrubis_process.poll() is None:
                 print('MRUBIS is running')
 
         self._connect_to_java()
@@ -141,7 +141,6 @@ class MRubisController():
 
         while self.run_counter < max_runs:
             self.run_counter += 1
-            sleep(0.1)
 
             print(f"Getting state {self.run_counter}/{max_runs}...")
 
