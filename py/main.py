@@ -1,9 +1,12 @@
 import json
+import random
 import socket
 from json.decoder import JSONDecodeError
 from subprocess import PIPE, Popen
 from time import sleep
+
 import pandas as pd
+
 
 class MRubisController():
 
@@ -85,13 +88,18 @@ class MRubisController():
         component_name = next(iter(issue[shop_name]))
         component_params = issue.get(shop_name).get(component_name)
         issue_name = component_params.get('failure_name')
-        rules = component_params['rule_names'].strip('[]').split(',')
-        rule_costs = component_params['rule_costs'].strip('[]').split(',')
+        rules = [rule.strip() for rule in component_params['rule_names'].strip('[]').split(',')]
+        rule_costs = [float(costs) for costs in component_params['rule_costs'].strip('[]').split(',')]
         return shop_name, component_name, component_params, issue_name, rules, rule_costs
 
     @staticmethod
-    def _pick_rule(issue, rules, rule_costs):
-        return rules[0]
+    def _pick_rule(issue, rules, rule_costs, method='random'):
+        if method == 'random':
+            return random.choice(rules)
+        if method == 'lowest':
+            return rules[rule_costs.index(min(rule_costs))]
+        if method == 'highest':
+            return rules[rule_costs.index(max(rule_costs))]
 
     def _send_rule_to_execute(self, issue, rule):
         shop_name, component_name, _, issue_name, _, _ = self._get_info_from_issue(issue)
@@ -133,6 +141,14 @@ class MRubisController():
                 for param, value in component_params.items():
                     self.mrubis_state[shop][component_type][param] = value
 
+    def _get_system_utility(self):
+        '''Calculates the utility for the entire system (across shops)'''
+        total_utility = 0
+        for shop_attributes in self.mrubis_state.values():
+            for comp_attributes in shop_attributes.values():
+                total_utility += float(comp_attributes['component_utility'])
+        return total_utility
+
     def run(self, external_start=False, max_runs=100):
 
         if not external_start:
@@ -161,24 +177,30 @@ class MRubisController():
 
                 self._update_number_of_issues_in_run()
 
+                # Get the current issue to handle
                 current_issue = self._get_from_mrubis('get_issue')
                 self._update_current_state(current_issue)
 
+                # Get available rules, pick rule, send it to mRUBiS
                 shop_name, component_name, _, _, rules, rule_costs = self._get_info_from_issue(current_issue)
                 picked_rule = self._pick_rule(current_issue, rules, rule_costs)
                 self._send_rule_to_execute(current_issue, picked_rule)
 
+                # Remember components that have been fixed in this run
                 if components_fixed_in_this_run.get(shop_name) is None:
                     components_fixed_in_this_run[shop_name] = []
                 components_fixed_in_this_run[shop_name].append(component_name)
                 number_of_issues_handled_in_this_run += 1
 
-            print(f'Applied actions to these components in this run: {components_fixed_in_this_run}')
+            print(f'System utility before taking action: {self._get_system_utility()}')
             self._append_current_state_to_history()
 
+            print(f'Applied actions to these components in this run: {components_fixed_in_this_run}')
             print("Getting state of affected components after taking action...")
             state_after_action = self._get_from_mrubis(message=json.dumps(components_fixed_in_this_run))
             self._update_current_state(state_after_action)
+
+            print(f'System utility after taking action: {self._get_system_utility()}')
             self._append_current_state_to_history()
 
         self._send_exit_message()
