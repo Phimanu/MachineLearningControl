@@ -7,6 +7,7 @@ from subprocess import PIPE, Popen
 from time import sleep
 
 import pandas as pd
+import numpy as np
 
 
 class MRubisController():
@@ -125,20 +126,21 @@ class MRubisController():
     def _close_socket(self):
         self.socket.close()
 
-    def _append_current_state_to_history(self):
+    def _append_current_state_to_history(self, fix_status):
         mrubis_df = pd.DataFrame.from_dict({
-            (i,j): self.mrubis_state[i][j] 
-                for i in self.mrubis_state.keys() 
-                for j in self.mrubis_state[i].keys()},
+            (fix_status, shop, component): self.mrubis_state[shop][component] 
+                for shop in self.mrubis_state.keys() 
+                for component in self.mrubis_state[shop].keys()},
             orient='index')
 
         self.mrubis_state_history.append(mrubis_df)
 
     def _write_state_history_to_disk(self, filename='mrubis'):
-        mrubis_df = pd.concat(self.mrubis_state_history, keys=range(len(self.mrubis_state_history)))
+        mrubis_df = pd.concat(self.mrubis_state_history, keys=np.repeat(np.arange(1, len(self.mrubis_state_history)+1), 2)).reset_index()
+        mrubis_df.columns = ['run', 'fix_status', 'shop', 'component'] + list(mrubis_df.columns)[4:]
         self.output_path.mkdir(exist_ok=True)
-        mrubis_df.to_csv(self.output_path / f'{filename}.csv')
-        mrubis_df.to_excel(self.output_path / f'{filename}.xls')
+        mrubis_df.to_csv(self.output_path / f'{filename}.csv', index=False)
+        mrubis_df.to_excel(self.output_path / f'{filename}.xls', index=False)
 
     def _update_current_state(self, incoming_state):
         for shop, shop_components in incoming_state.items():
@@ -207,7 +209,7 @@ class MRubisController():
 
             print(f'System utility before taking action: {self._get_system_utility()}')
             self._write_system_utility_into_state()
-            self._append_current_state_to_history()
+            self._append_current_state_to_history(fix_status='before')
 
             print(f'Applied actions to these components in this run: {components_fixed_in_this_run}')
             print("Getting state of affected components after taking action...")
@@ -216,7 +218,7 @@ class MRubisController():
 
             print(f'System utility after taking action: {self._get_system_utility()}')
             self._write_system_utility_into_state()
-            self._append_current_state_to_history()
+            self._append_current_state_to_history(fix_status='after')
 
         self._send_exit_message()
         self._close_socket()
