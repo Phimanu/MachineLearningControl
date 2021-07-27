@@ -95,9 +95,13 @@ class MRubisController():
         return shop_name, component_name, component_params, issue_name, rules, rule_costs
 
     @staticmethod
-    def _pick_rule(issue, rules, rule_costs, method='random'):
+    def _pick_rule(component_name, rules, rule_costs, method='random'):
+        # ReplaceComponent can only be used on Authentication Service
+        if component_name != 'Authentication Service':
+            rules = [rule for rule in rules if rule != 'ReplaceComponent']
+
         if method == 'random':
-            return random.choice([rule for rule in rules if rule != 'ReplaceComponent'])
+            return random.choice(rules)
         if method == 'lowest':
             return rules[rule_costs.index(min(rule_costs))]
         if method == 'highest':
@@ -192,7 +196,7 @@ class MRubisController():
 
                 # Get available rules, pick rule, send it to mRUBiS
                 shop_name, component_name, _, _, rules, rule_costs = self._get_info_from_issue(current_issue)
-                picked_rule = self._pick_rule(current_issue, rules, rule_costs)
+                picked_rule = self._pick_rule(component_name, rules, rule_costs)
                 self._send_rule_to_execute(current_issue, picked_rule)
 
                 # Remember components that have been fixed in this run
