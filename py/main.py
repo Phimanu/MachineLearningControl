@@ -95,7 +95,7 @@ class MRubisController():
     @staticmethod
     def _pick_rule(issue, rules, rule_costs, method='random'):
         if method == 'random':
-            return random.choice(rules)
+            return random.choice([rule for rule in rules if rule != 'ReplaceComponent'])
         if method == 'lowest':
             return rules[rule_costs.index(min(rule_costs))]
         if method == 'highest':
@@ -114,7 +114,7 @@ class MRubisController():
 
     def _send_exit_message(self):
         self.socket.send("exit\n".encode("utf-8"))
-        data = self.socket.recv(64000)
+        _ = self.socket.recv(64000)
 
     def _close_socket(self):
         self.socket.close()
@@ -148,6 +148,12 @@ class MRubisController():
             for comp_attributes in shop_attributes.values():
                 total_utility += float(comp_attributes['component_utility'])
         return total_utility
+
+    def _write_system_utility_into_state(self):
+        system_utility = self._get_system_utility()
+        for shop, shop_components in self.mrubis_state.items():
+            for component_type, _ in shop_components.items():
+                self.mrubis_state[shop][component_type]['sys_utility'] = system_utility
 
     def run(self, external_start=False, max_runs=100):
 
@@ -193,6 +199,7 @@ class MRubisController():
                 number_of_issues_handled_in_this_run += 1
 
             print(f'System utility before taking action: {self._get_system_utility()}')
+            self._write_system_utility_into_state()
             self._append_current_state_to_history()
 
             print(f'Applied actions to these components in this run: {components_fixed_in_this_run}')
@@ -201,6 +208,7 @@ class MRubisController():
             self._update_current_state(state_after_action)
 
             print(f'System utility after taking action: {self._get_system_utility()}')
+            self._write_system_utility_into_state()
             self._append_current_state_to_history()
 
         self._send_exit_message()
