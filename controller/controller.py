@@ -1,6 +1,7 @@
 import json
 import random
 import socket
+from pathlib import Path
 from json.decoder import JSONDecodeError
 from subprocess import PIPE, Popen
 from time import sleep
@@ -36,6 +37,7 @@ class MRubisController():
         self.mrubis_state_history = []
         self.socket = None
         self.mrubis_process = None
+        self.output_path = Path(__file__).parent.resolve() / 'output'
 
     def _start_mrubis(self):
         self.mrubis_process = Popen(
@@ -130,8 +132,9 @@ class MRubisController():
 
     def _write_state_history_to_disk(self, filename='mrubis'):
         mrubis_df = pd.concat(self.mrubis_state_history, keys=range(len(self.mrubis_state_history)))
-        mrubis_df.to_csv(f'{filename}.csv')
-        mrubis_df.to_excel(f'{filename}.xls')
+        self.output_path.mkdir(exist_ok=True)
+        mrubis_df.to_csv(self.output_path / f'{filename}.csv')
+        mrubis_df.to_excel(self.output_path / f'{filename}.xls')
 
     def _update_current_state(self, incoming_state):
         for shop, shop_components in incoming_state.items():

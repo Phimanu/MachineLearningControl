@@ -6,6 +6,7 @@ bin/
 .vscode/
 mRUBiS/.metadata/*
 mRUBiS/ML_based_Control/Logs/*
-py/path.json
-py/path.txt
+controller/output/
 mRUBiS/ML_based_Control/log.txt
+mRUBiS/ML_based_Control/Logs/TrainingmRUBiS.csv
+mRUBiS/ML_based_Control/issueToRulesMap.json
