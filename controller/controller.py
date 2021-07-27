@@ -12,7 +12,7 @@ import numpy as np
 
 class MRubisController():
 
-    def __init__(self, host='localhost', port=8080, json_path='path.json') -> None:
+    def __init__(self, host='localhost', port=8080, json_path='path.json', rule_approach='lowest') -> None:
 
         # Put your command line here (In Eclipse: Run -> Run Configurations... -> Show Command Line)
         with open(json_path, 'r') as f:
@@ -96,9 +96,10 @@ class MRubisController():
         return shop_name, component_name, component_params, issue_name, rules, rule_costs
 
     @staticmethod
-    def _pick_rule(component_name, rules, rule_costs, method='random'):
+    def _pick_rule(component_name, rules, rule_costs, method='lowest'):
         # ReplaceComponent can only be used on Authentication Service
         if component_name != 'Authentication Service':
+            rule_costs = [cost for idx, cost in enumerate(rule_costs) if rules[idx] != 'ReplaceComponent']
             rules = [rule for rule in rules if rule != 'ReplaceComponent']
 
         if method == 'random':
@@ -164,7 +165,14 @@ class MRubisController():
             for component_type, _ in shop_components.items():
                 self.mrubis_state[shop][component_type]['sys_utility'] = system_utility
 
-    def run(self, external_start=False, max_runs=100):
+    def _remove_replaced_authentication_service(self):
+        for shop, shop_components in self.mrubis_state.copy().items():
+            if len([comp for comp in list(shop_components.keys()) if 'Authentication Service' in comp]) > 1:
+                for component_type, component_params in shop_components.copy().items():
+                    if 'Authentication Service' in component_type and np.isclose(float(component_params['component_utility']), 0):
+                        del self.mrubis_state[shop][component_type]
+
+    def run(self, external_start=False, max_runs=100, rule_picking_method='lowest'):
 
         if not external_start:
             self._start_mrubis()
@@ -198,7 +206,7 @@ class MRubisController():
 
                 # Get available rules, pick rule, send it to mRUBiS
                 shop_name, component_name, _, _, rules, rule_costs = self._get_info_from_issue(current_issue)
-                picked_rule = self._pick_rule(component_name, rules, rule_costs)
+                picked_rule = self._pick_rule(component_name, rules, rule_costs, method=rule_picking_method)
                 self._send_rule_to_execute(current_issue, picked_rule)
 
                 # Remember components that have been fixed in this run
@@ -215,6 +223,7 @@ class MRubisController():
             print("Getting state of affected components after taking action...")
             state_after_action = self._get_from_mrubis(message=json.dumps(components_fixed_in_this_run))
             self._update_current_state(state_after_action)
+            self._remove_replaced_authentication_service()
 
             print(f'System utility after taking action: {self._get_system_utility()}')
             self._write_system_utility_into_state()
@@ -226,8 +235,8 @@ class MRubisController():
         if not external_start:
             self._stop_mrubis()
 
-        self._write_state_history_to_disk()
+        self._write_state_history_to_disk(filename=f'{max_runs}_runs_{rule_picking_method}')
 
 if __name__ == "__main__":
     controller = MRubisController()
-    controller.run(external_start=True, max_runs=100)
+    controller.run(external_start=True, max_runs=500, rule_picking_method='random')
