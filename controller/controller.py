@@ -146,6 +146,8 @@ class MRubisController():
     def _update_current_state(self, incoming_state):
         for shop, shop_components in incoming_state.items():
             for component_type, component_params in shop_components.items():
+                if shop not in self.mrubis_state.keys():
+                    self.mrubis_state[shop] = {}
                 if component_type not in self.mrubis_state[shop].keys():
                     self.mrubis_state[shop][component_type] = {}
                 for param, value in component_params.items():
@@ -187,6 +189,7 @@ class MRubisController():
 
         while self.run_counter < max_runs:
             self.run_counter += 1
+            self.mrubis_state = {}
 
             print(f"Getting state {self.run_counter}/{max_runs}...")
 
@@ -239,4 +242,4 @@ class MRubisController():
 
 if __name__ == "__main__":
     controller = MRubisController()
-    controller.run(external_start=True, max_runs=500, rule_picking_method='random')
+    controller.run(external_start=True, max_runs=100, rule_picking_method='lowest')
