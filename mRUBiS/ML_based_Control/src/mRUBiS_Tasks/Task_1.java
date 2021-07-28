@@ -378,6 +378,31 @@ public class Task_1 {
 					}
 					// for (Component component : BACKUPcomp)
 					// {component.}
+					
+					
+					// Get custom fix ordering from Python
+					System.out.println("Waiting for Python to send order in which to apply fixes...");
+					String fromPython = "";
+					while(true) {
+						fromPython = RuleSelector.in.readLine();
+						
+						try {
+							// get components fixed in this run from python
+							HashMap<String, HashMap<String, String>> fixOrder = new HashMap<String, HashMap<String, String>>();
+							fixOrder = new ObjectMapper().readValue(fromPython, HashMap.class);
+							
+							RuleSelector.out.println("fix_order_received");
+							RuleSelector.logger.println("fix_order_received");
+							break;
+						} catch (IOException e) {
+							System.out.println("Did not receive valid json from Python:");
+							System.out.println(fromPython);
+							continue;
+						}
+
+					}
+					
+					
 
 					
 					execute(interpreter, allIssues, E_CF1, E_CF2, E_CF3, E_CF5);
@@ -393,7 +418,7 @@ public class Task_1 {
 
 
 					System.out.println("Waiting for Python to send fixed components JSON...");
-					String fromPython = "";
+					fromPython = "";
 					while(true) {
 						fromPython = RuleSelector.in.readLine();
 						

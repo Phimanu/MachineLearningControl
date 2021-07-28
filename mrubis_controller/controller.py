@@ -5,6 +5,8 @@ from pathlib import Path
 from json.decoder import JSONDecodeError
 from subprocess import PIPE, Popen
 from time import sleep
+
+from numpy.lib.ufunclike import fix
 from component_utility_predictor import RidgeUtilityPredictor
 
 import pandas as pd
@@ -136,6 +138,28 @@ class MRubisController():
                 )[0]
                 self.mrubis_state[shop][component]['predicted_optimal_utility'] = predicted_utility
 
+    def _get_component_fixing_order(self, state_df_before):
+        return state_df_before.dropna(subset=['predicted_optimal_utility'])\
+                              .sort_values(by='predicted_optimal_utility', ascending=False)\
+                              .reset_index(level=0)\
+                              .set_index('failure_name', append=True)\
+                              .reorder_levels([0,2,1])\
+                              .index\
+                              .tolist()
+
+    def _send_order_in_which_to_apply_fixes(self, order_tuples):
+        print('Sending order in which to apply fixes to mRUBIS...')
+        order_dict = {idx: {
+                'shop': fix_tuple[0],
+                'issue': fix_tuple[1],
+                'component': fix_tuple[2]
+            } for idx, fix_tuple in enumerate(order_tuples)}
+        self.socket.send((json.dumps(order_dict)  + '\n').encode("utf-8"))
+        print("Waiting for mRUBIS to answer with 'fix_order_received'...")
+        data = self.socket.recv(64000)
+        if data.decode('utf-8').strip() == 'fix_order_received':
+            print('Order transmitted successfully.')
+
     def _send_exit_message(self):
         self.socket.send("exit\n".encode("utf-8"))
         _ = self.socket.recv(64000)
@@ -143,21 +167,21 @@ class MRubisController():
     def _close_socket(self):
         self.socket.close()
 
-    def _append_current_state_to_history(self, fix_status):
-        mrubis_df = pd.DataFrame.from_dict({
+    def _state_to_df(self, fix_status):
+        state_df = pd.DataFrame.from_dict({
             (fix_status, shop, component): self.mrubis_state[shop][component] 
                 for shop in self.mrubis_state.keys() 
                 for component in self.mrubis_state[shop].keys()},
             orient='index')
-
-        self.mrubis_state_history.append(mrubis_df)
+        return state_df
 
     def _write_state_history_to_disk(self, filename='mrubis'):
-        mrubis_df = pd.concat(self.mrubis_state_history, keys=np.repeat(np.arange(1, len(self.mrubis_state_history)+1), 2)).reset_index()
-        mrubis_df.columns = ['run', 'fix_status', 'shop', 'component'] + list(mrubis_df.columns)[4:]
+        history_df = pd.concat(self.mrubis_state_history, keys=np.repeat(np.arange(1, len(self.mrubis_state_history)+1), 2)).reset_index()
+        history_df.columns = ['run', 'fix_status', 'shop', 'component'] + list(history_df.columns)[4:]
         self.output_path.mkdir(exist_ok=True)
-        mrubis_df.to_csv(self.output_path / f'{filename}.csv', index=False)
-        mrubis_df.to_excel(self.output_path / f'{filename}.xls', index=False)
+        print('Writing run history to disk...')
+        history_df.to_csv(self.output_path / f'{filename}.csv', index=False)
+        history_df.to_excel(self.output_path / f'{filename}.xls', index=False)
 
     def _update_current_state(self, incoming_state):
         for shop, shop_components in incoming_state.items():
@@ -219,18 +243,21 @@ class MRubisController():
 
                 self.number_of_issues_handled_in_this_run += 1
 
-            self._append_current_state_to_history(fix_status='before')
-
             print(f'Applied actions to these components in this run: {self.components_fixed_in_this_run}')
-
             self._predict_optimal_utility_of_fixed_components()
+            state_df_before = self._state_to_df(fix_status='before')
+            self.mrubis_state_history.append(state_df_before)
+
+            component_fixing_order = self._get_component_fixing_order(state_df_before)
+            self._send_order_in_which_to_apply_fixes(component_fixing_order)
 
             print("Getting state of affected components after taking action...")
             state_after_action = self._get_from_mrubis(message=json.dumps(self.components_fixed_in_this_run))
             self._update_current_state(state_after_action)
             self._remove_replaced_authentication_service()
 
-            self._append_current_state_to_history(fix_status='after')
+            state_df_after = self._state_to_df(fix_status='after')
+            self.mrubis_state_history.append(state_df_after)
 
         self._send_exit_message()
         self._close_socket()
