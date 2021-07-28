@@ -54,9 +54,10 @@ public class Observations {
 			HashMap<String, String> parameterMap = new HashMap<String, String>();
 			
 			parameterMap.put("uid", component.getUid());
-			parameterMap.put("state", component.getState().getName());
 			parameterMap.put("adt", String.valueOf(component.getADT()));
 			parameterMap.put("connectivity", String.valueOf(new Double(component.getProvidedInterfaces().size() + component.getRequiredInterfaces().size())));
+			parameterMap.put("required_interface", String.valueOf(component.getRequiredInterfaces().size()));
+			parameterMap.put("provided_interface", String.valueOf(component.getProvidedInterfaces().size()));
 			parameterMap.put("importance", String.valueOf(component.getTenant().getImportance()));
 			parameterMap.put("reliability", String.valueOf(component.getType().getReliability()));
 			parameterMap.put("criticality", String.valueOf(component.getType().getCriticality()));
@@ -140,12 +141,13 @@ public class Observations {
 						HashMap<String, String> parameterMap = new HashMap<String, String>();
 
 						parameterMap.put("uid", affectedComponent.getUid());
-						parameterMap.put("state", affectedComponent.getState().getName());
 						parameterMap.put("failure_name", failureName.toString());
 						parameterMap.put("rule_names", availableRuleNames.toString());
 						parameterMap.put("rule_costs", availableRuleCosts.toString());
 						parameterMap.put("adt", String.valueOf(affectedComponent.getADT()));
 						parameterMap.put("connectivity", String.valueOf(new Double(affectedComponent.getProvidedInterfaces().size() + affectedComponent.getRequiredInterfaces().size())));
+						parameterMap.put("required_interface", String.valueOf(affectedComponent.getRequiredInterfaces().size()));
+						parameterMap.put("provided_interface", String.valueOf(affectedComponent.getProvidedInterfaces().size()));
 						parameterMap.put("importance", String.valueOf(affectedComponent.getTenant().getImportance()));
 						parameterMap.put("reliability", String.valueOf(affectedComponent.getType().getReliability()));
 						parameterMap.put("criticality", String.valueOf(affectedComponent.getType().getCriticality()));
@@ -222,12 +224,13 @@ public class Observations {
 						}
 						
 						parameterMap.put("uid", component.getUid());
-						parameterMap.put("state", component.getState().getName());
 						parameterMap.put("failure_name", failureName.toString());
 						parameterMap.put("rule_names", availableRuleNames.toString());
 						parameterMap.put("rule_costs", availableRuleCosts.toString());
 						parameterMap.put("adt", String.valueOf(component.getADT()));
 						parameterMap.put("connectivity", String.valueOf(new Double(component.getProvidedInterfaces().size() + component.getRequiredInterfaces().size())));
+						parameterMap.put("required_interface", String.valueOf(component.getRequiredInterfaces().size()));
+						parameterMap.put("provided_interface", String.valueOf(component.getProvidedInterfaces().size()));
 						parameterMap.put("importance", String.valueOf(component.getTenant().getImportance()));
 						parameterMap.put("reliability", String.valueOf(component.getType().getReliability()));
 						parameterMap.put("criticality", String.valueOf(component.getType().getCriticality()));
