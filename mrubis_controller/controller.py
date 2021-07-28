@@ -5,6 +5,7 @@ from pathlib import Path
 from json.decoder import JSONDecodeError
 from subprocess import PIPE, Popen
 from time import sleep
+from component_utility_predictor import RidgeUtilityPredictor
 
 import pandas as pd
 import numpy as np
@@ -38,6 +39,7 @@ class MRubisController():
         self.mrubis_state_history = []
         self.socket = None
         self.mrubis_process = None
+        self.utility_model = RidgeUtilityPredictor()
         self.output_path = Path(__file__).parent.resolve() / 'output'
 
     def _start_mrubis(self):
@@ -119,6 +121,19 @@ class MRubisController():
         data = self.socket.recv(64000)
         if data.decode('utf-8').strip() == 'rule_received':
             print('Rule transmitted successfully.')
+        # Remember components that have been fixed in this run
+        if self.components_fixed_in_this_run.get(shop_name) is None:
+            self.components_fixed_in_this_run[shop_name] = []
+        self.components_fixed_in_this_run[shop_name].append(component_name)
+
+    def _predict_optimal_component_utility(self):
+        for shop, fixed_components in self.components_fixed_in_this_run.items():
+            for component in fixed_components:
+                component_params = self.mrubis_state[shop][component]
+                predicted_utility = self.utility_model.predict_on_mrubis_output(
+                    pd.DataFrame(component_params, index=[0])
+                )
+                self.mrubis_state[shop][component]['predicted_optimal_utility'] = predicted_utility
 
     def _send_exit_message(self):
         self.socket.send("exit\n".encode("utf-8"))
@@ -185,21 +200,24 @@ class MRubisController():
 
         self._connect_to_java()
 
+        self.utility_model.load_train_data()
+        self.utility_model.train_on_batch_file()
+
         # TODO: explain design decisions in comments
 
         while self.run_counter < max_runs:
             self.run_counter += 1
-            self.mrubis_state = {}
+            self.components_fixed_in_this_run = {}
+            self.number_of_issues_handled_in_this_run = 0
+            self.number_of_issues_in_run = 1 # make sure that the loop runs at least once
 
             print(f"Getting state {self.run_counter}/{max_runs}...")
 
             if self.run_counter == 1:
                 self._get_initial_state()
 
-            components_fixed_in_this_run = {}
-            number_of_issues_handled_in_this_run = 0
-            self.number_of_issues_in_run = 1 # make sure that the loop runs at least once
-            while number_of_issues_handled_in_this_run < self.number_of_issues_in_run:
+            
+            while self.number_of_issues_handled_in_this_run < self.number_of_issues_in_run:
 
                 self._update_number_of_issues_in_run()
 
@@ -208,23 +226,22 @@ class MRubisController():
                 self._update_current_state(current_issue)
 
                 # Get available rules, pick rule, send it to mRUBiS
-                shop_name, component_name, _, _, rules, rule_costs = self._get_info_from_issue(current_issue)
+                _, component_name, _, _, rules, rule_costs = self._get_info_from_issue(current_issue)
                 picked_rule = self._pick_rule(component_name, rules, rule_costs, method=rule_picking_method)
                 self._send_rule_to_execute(current_issue, picked_rule)
 
-                # Remember components that have been fixed in this run
-                if components_fixed_in_this_run.get(shop_name) is None:
-                    components_fixed_in_this_run[shop_name] = []
-                components_fixed_in_this_run[shop_name].append(component_name)
-                number_of_issues_handled_in_this_run += 1
+                self.number_of_issues_handled_in_this_run += 1
 
             print(f'System utility before taking action: {self._get_system_utility()}')
             self._write_system_utility_into_state()
             self._append_current_state_to_history(fix_status='before')
 
-            print(f'Applied actions to these components in this run: {components_fixed_in_this_run}')
+            print(f'Applied actions to these components in this run: {self.components_fixed_in_this_run}')
+
+            self._predict_optimal_component_utility()
+
             print("Getting state of affected components after taking action...")
-            state_after_action = self._get_from_mrubis(message=json.dumps(components_fixed_in_this_run))
+            state_after_action = self._get_from_mrubis(message=json.dumps(self.components_fixed_in_this_run))
             self._update_current_state(state_after_action)
             self._remove_replaced_authentication_service()
 
