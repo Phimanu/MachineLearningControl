@@ -79,24 +79,24 @@ public class Task_1 {
 	//public static Approaches CURRENT_APPROACH = Approaches.RANDOM;
 	public static Approaches CURRENT_APPROACH = Approaches.Learning;
 	public static Utilityfunction UTILITY_FUNCTION = Utilityfunction.Combined;
-	
+
 
 	public static FileWriter Training = null;
 	public static FileWriter MLValidation = null;
-	
-    private static Path issueToRulesPath = Paths.get("issueToRulesMap.json");
-    private static Path rulesToExecutePath= Paths.get("rulesToExecute.json");
-	
-	
+
+	private static Path issueToRulesPath = Paths.get("issueToRulesMap.json");
+	private static Path rulesToExecutePath= Paths.get("rulesToExecute.json");
+
+
 	private final static int RUNS = 10000; 
 
 	private final static String SEP = ",";
 	private final static boolean Log = true;
 
-	
-	
+
+
 	public static void main(String[] args) throws SDMException, IOException, InterruptedException {
-		
+
 		try {
 			if (Files.exists(issueToRulesPath)) {
 				Files.delete(issueToRulesPath);
@@ -107,7 +107,7 @@ public class Task_1 {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	
+
 
 		boolean enableLogging = false;
 		configLogging(enableLogging);
@@ -125,10 +125,10 @@ public class Task_1 {
 		// A_CF_New .....Discontinuous
 		// A_CF_Performance .....Saturating
 		// A_CF_ALL ..... ALL + ALL without Random
-		
-		       
-		
-		
+
+
+
+
 
 		Activity A_CF1 = EnvSetUp.getStoryDiagramActivityFromFile("model/analysis/A_CF1_ALL.mlsdm");
 		Activity A_CF2 = EnvSetUp.getStoryDiagramActivityFromFile("model/analysis/A_CF2_ALL.mlsdm");
@@ -150,7 +150,7 @@ public class Task_1 {
 		if (CURRENT_APPROACH == Approaches.Udriven ) {
 			issueComparator = new IssueComparator();
 
-	
+
 
 		}
 		//option for Ranking
@@ -165,274 +165,277 @@ public class Task_1 {
 		final boolean useOptimization = true;
 		MLSDMInterpreter interpreter = EnvSetUp.getStoryDiagramInterpreter(stdout, useOptimization);
 
-		
-		
-		
-	
 
-		
+
+
+
+
+
 		if (Log) {
-		
-			
-			
+
+
+
 			Training=new FileWriter("Logs/TrainingmRUBiS.csv");
-			
-			
+
+
 			Training.append( "Shop"+SEP + "AFFECTED_COMPONENT"+ SEP+"FAILURE_NAME" + SEP + "CURRENT_UTILITY" + SEP + "OPTIMAL_UTILITY" + SEP+ "CRITICALITY" + SEP
-					 + "COSTS" + SEP + "CONNECTIVITY" + SEP + "RELIABILITY" + SEP
+					+ "COSTS" + SEP + "CONNECTIVITY" + SEP + "RELIABILITY" + SEP
 					+ "IMPORTANCE" + SEP + "PROVIDED_INTERFACE" + SEP + "REQUIRED_INTERFACE" + SEP + "ADT" + SEP
 					+ "RULE" + SEP + " PMax" + SEP + "alpha" + SEP + "In Use REPLICA" + SEP + "LOAD"+"\n");
-			
+
 		}
-		
-	/*
+
+		/*
 		 * Benchmark actually starts
 		 */
-	
-
-			/*
-			 * Load model
-			 */
-			Resource architectureResource = EnvSetUp
-					
-					.loadFreshInstance("model/enriched/mRUBiS-10shop_enriched.comparch");
-																								
-																								
-	
-			Architecture architecture = (Architecture) architectureResource.getContents().get(0);
-			
-
-			// EMF Delete Optimization
-			if (useOptimization) {
-				((OptimizedMSLDMInstanceFacade) interpreter.getFacadeFactory().getInstanceFacade())
-						.initialize(Collections.singleton(architecture));
-			}
-
-			Annotations annotations = architecture.getAnnotations();
-			if (annotations == null) {
-				annotations = ComparchFactory.eINSTANCE.createAnnotations();
-				architecture.setAnnotations(annotations);
-			}
-			
-
-			// attach event listener
-			architecture.eAdapters().add(new EventListener());
-
-			// set up simulator:
-			String logFile = null;
-			boolean logToConsole = false;
-			ComparchSimulator simulator = ComparchSimulator.FACTORY.createSimulator(Capability.SELF_REPAIR,
-					architecture, RUNS, Level.CONFIG, logFile, logToConsole);
-					//InjectionStrategy strategy = new testTrace
-			InjectionStrategy strategy = new Trace_2
-					(simulator.getSupportedIssueTypes(), architecture);
-			simulator.setInjectionStrategy(strategy);
-
-			
-			/*
-			 * Start the simulation
-			 */
-			
-
-			// call the simulator for the initial validation
-			int issueCount = simulator.validate();
-	  	    double	OveralU=ArchitectureUtilCal.computeOverallUtility(architecture);
-			int run = 0;
-			if (issueCount > 0) {
-				System.out.println("\n\nInitial validaton. There are already issues in the model.");
-				
-			}
-			else {System.out.println("\n\nInitial validaton. There are no issues in the model.\n \n \nCurrent Overal Utility is: "+ OveralU);}
-		
-			
-			while (!simulator.isSimulationCompleted()) { // = number of RUNS
-				run++;
-
-				// call the simulator to inject issues.
-				simulator.injectIssues();
-			
-
-				// if run <= RUNS then the simulator injects issues. As soon as
-				// run > RUNS, the simulator is triggered only once to analyze
-				// the model and the last adaptation.
-				if (run <= RUNS) {
-					System.out.print("\n Run : " + run);
-					System.out.print("\n . \n .");
-					
-					
-					/*
-					 * Analyze
-					 */
-					analyze(interpreter, annotations, A_CF1, A_CF2, A_CF3, A_CF5);
-					System.out.printf("\n>> Analyze Compelete\n\n");
-					ArchitectureUtilCal.computeOverallUtility(architecture);
 
 
-					/*
-					 * Plan
-					 */
-					plan(interpreter, annotations, P_CF1, P_CF2, P_CF3, P_CF5);
-					// Sorting the failures to address first
-					List<Issue> allIssues = new LinkedList<>();
-					allIssues.addAll(annotations.getIssues());
-					
+		/*
+		 * Load model
+		 */
+		Resource architectureResource = EnvSetUp
+
+				.loadFreshInstance("model/enriched/mRUBiS-10shop_enriched.comparch");
 
 
-//					if (CURRENT_APPROACH == Approaches.RANDOM) 
-//						{shuffle(allIssues);}
-//					
-//						
-//						else //Udriven and Learning
-//							{
-//							allIssues.sort(issueComparator);
-//						}
-						
 
-					
-					
-					// add Real Utility Values : Ground Truth
-					if (CURRENT_APPROACH == Approaches.Learning)
-					{for (Issue issue : allIssues)
-						RuleSelector.addActualUtilityIncreaseToRule( issue, UTILITY_FUNCTION);
-					}
-					
-					
-					
-					
-					
-					if (Log) {
-						//System.out.print("\n Run : " + run);
-						for (Issue issue : allIssues) {
-							Rule r = issue.getHandledBy().get(0);
-							// ** Compute the Connectivity
-							// first, init with number outgoing connectors
-							int numberOfConnectors = issue.getAffectedComponent().getRequiredInterfaces().size();
-							int numberOfProvided = 0;
-							// second, add number of incoming connectors
-							for (ProvidedInterface pi : issue.getAffectedComponent().getProvidedInterfaces()) {
-								numberOfProvided = numberOfProvided + pi.getConnectors().size();
-							}
-							numberOfConnectors = numberOfConnectors + numberOfProvided;
-							
-							double reliability = 1;
-							if (r instanceof ReplaceComponent) {
-
-								ComponentType altComponentType = UtilityIncreasePredictor
-										.selectAlternativeComponentType(issue.getAffectedComponent());
-
-								if (altComponentType != null) {
-									reliability = altComponentType.getReliability();
-								
-								}
-
-							} else {
-								reliability = issue.getAffectedComponent().getType().getReliability();
-							}
+		Architecture architecture = (Architecture) architectureResource.getContents().get(0);
 
 
-							Training.append( issue.getAffectedComponent().getTenant().getName()+SEP
-									+ issue.getAffectedComponent().getType().getName() + SEP
-									+ issue.eClass().getName() + SEP 
-									+  ArchitectureUtilCal.computeComponentUtility(issue.getAffectedComponent())+SEP
-									+ (ArchitectureUtilCal.computeComponentUtility(issue.getAffectedComponent())+r.getUtilityIncrease() )+ SEP 
-									+ issue.getAffectedComponent().getType().getCriticality() + SEP
-									+ r.getCosts() + SEP
-									+ numberOfConnectors + SEP
-									+ reliability + SEP 
-									+ issue.getAffectedComponent().getTenant().getImportance() + SEP
-									+ numberOfProvided + SEP
-									+ issue.getAffectedComponent().getRequiredInterfaces().size() + SEP
-									+ issue.getAffectedComponent().getADT() + SEP 
-									+ r.eClass().getName() + SEP
-									+ issue.getAffectedComponent().getType().getPerformanceMax() + SEP
-									+ (4 / issue.getAffectedComponent().getType().getSatPoint()) + SEP
-									+ issue.getAffectedComponent().getInUseReplica() + SEP
-									+ issue.getAffectedComponent().getRequest() + SEP 
-									+ "\n"
+		// EMF Delete Optimization
+		if (useOptimization) {
+			((OptimizedMSLDMInstanceFacade) interpreter.getFacadeFactory().getInstanceFacade())
+			.initialize(Collections.singleton(architecture));
+		}
 
-							);
-							
-							
-						
-						}
-						 
-						 Training.append("\n");
-					}
-				
+		Annotations annotations = architecture.getAnnotations();
+		if (annotations == null) {
+			annotations = ComparchFactory.eINSTANCE.createAnnotations();
+			architecture.setAnnotations(annotations);
+		}
 
-					/*
-					 * Retrieve the predicted costs of the last remaining rule
-					 * for each issue. The rules in the model are those that are
-					 * executed next.
-					 */
-				
 
-					/*
-					 * Execute
-					 */
-					List<Component> BACKUPcomp = new LinkedList<>();
+		// attach event listener
+		architecture.eAdapters().add(new EventListener());
+
+		// set up simulator:
+		String logFile = null;
+		boolean logToConsole = false;
+		ComparchSimulator simulator = ComparchSimulator.FACTORY.createSimulator(Capability.SELF_REPAIR,
+				architecture, RUNS, Level.CONFIG, logFile, logToConsole);
+		//InjectionStrategy strategy = new testTrace
+		InjectionStrategy strategy = new Trace_2
+				(simulator.getSupportedIssueTypes(), architecture);
+		simulator.setInjectionStrategy(strategy);
+
+
+		/*
+		 * Start the simulation
+		 */
+
+
+		// call the simulator for the initial validation
+		int issueCount = simulator.validate();
+		double	OveralU=ArchitectureUtilCal.computeOverallUtility(architecture);
+		int run = 0;
+		if (issueCount > 0) {
+			System.out.println("\n\nInitial validaton. There are already issues in the model.");
+
+		}
+		else {System.out.println("\n\nInitial validaton. There are no issues in the model.\n \n \nCurrent Overal Utility is: "+ OveralU);}
+
+
+		while (!simulator.isSimulationCompleted()) { // = number of RUNS
+			run++;
+
+			// call the simulator to inject issues.
+			simulator.injectIssues();
+
+
+			// if run <= RUNS then the simulator injects issues. As soon as
+			// run > RUNS, the simulator is triggered only once to analyze
+			// the model and the last adaptation.
+			if (run <= RUNS) {
+				System.out.print("\n Run : " + run);
+				System.out.print("\n . \n .");
+
+
+				/*
+				 * Analyze
+				 */
+				analyze(interpreter, annotations, A_CF1, A_CF2, A_CF3, A_CF5);
+				System.out.printf("\n>> Analyze Compelete\n\n");
+				ArchitectureUtilCal.computeOverallUtility(architecture);
+
+
+				/*
+				 * Plan
+				 */
+				plan(interpreter, annotations, P_CF1, P_CF2, P_CF3, P_CF5);
+				// Sorting the failures to address first
+				List<Issue> allIssues = new LinkedList<>();
+				allIssues.addAll(annotations.getIssues());
+
+
+
+				//					if (CURRENT_APPROACH == Approaches.RANDOM) 
+				//						{shuffle(allIssues);}
+				//					
+				//						
+				//						else //Udriven and Learning
+				//							{
+				//							allIssues.sort(issueComparator);
+				//						}
+
+
+
+
+				// add Real Utility Values : Ground Truth
+				if (CURRENT_APPROACH == Approaches.Learning)
+				{for (Issue issue : allIssues)
+					RuleSelector.addActualUtilityIncreaseToRule( issue, UTILITY_FUNCTION);
+				}
+
+
+
+
+
+				if (Log) {
+					//System.out.print("\n Run : " + run);
 					for (Issue issue : allIssues) {
-						// System.out.print("\n here
-						// "+issue.getAffectedComponent().getType());
-						BACKUPcomp.add(issue.getAffectedComponent());
-					}
-					// for (Component component : BACKUPcomp)
-					// {component.}
-					
-					
-					if (CURRENT_APPROACH == Approaches.Learning) {
-						
-						// Get custom fix ordering from the controller
-						System.out.println("Waiting for Python to send order in which to apply fixes...");
-						String fromPython = "";
-						HashMap<String, HashMap<String, String>> fixOrder = new HashMap<String, HashMap<String, String>>();
-						while(true) {
-							fromPython = RuleSelector.in.readLine();
-							
-							try {
-								// get order in which to apply fixes from python
-								fixOrder = new ObjectMapper().readValue(fromPython, HashMap.class);
-								
-								RuleSelector.out.println("fix_order_received");
-								RuleSelector.logger.println("fix_order_received");
-								break;
-							} catch (IOException e) {
-								System.out.println("Did not receive valid json from Python:");
-								System.out.println(fromPython);
-								continue;
+						Rule r = issue.getHandledBy().get(0);
+						// ** Compute the Connectivity
+						// first, init with number outgoing connectors
+						int numberOfConnectors = issue.getAffectedComponent().getRequiredInterfaces().size();
+						int numberOfProvided = 0;
+						// second, add number of incoming connectors
+						for (ProvidedInterface pi : issue.getAffectedComponent().getProvidedInterfaces()) {
+							numberOfProvided = numberOfProvided + pi.getConnectors().size();
+						}
+						numberOfConnectors = numberOfConnectors + numberOfProvided;
+
+						double reliability = 1;
+						if (r instanceof ReplaceComponent) {
+
+							ComponentType altComponentType = UtilityIncreasePredictor
+									.selectAlternativeComponentType(issue.getAffectedComponent());
+
+							if (altComponentType != null) {
+								reliability = altComponentType.getReliability();
+
 							}
 
+						} else {
+							reliability = issue.getAffectedComponent().getType().getReliability();
 						}
-						
-						// reorder the issues according to the order sent by the controller
-						List<Issue> orderedIssues = new LinkedList<>();
-						for (String key: fixOrder.keySet()) {
-							String shopName = fixOrder.get(key).get("shop");
-							String issueName = fixOrder.get(key).get("issue");
-							String componentName = fixOrder.get(key).get("component");
-							
-							for (Issue issue: allIssues) {
-								if (issue.getAffectedComponent().getTenant().getName().equals(shopName)) {
-									if (issue.getClass().getSimpleName().replaceAll("Impl", "").equals(issueName)) {
-										if (issue.getAffectedComponent().getType().getName().equals(componentName)) {
-											orderedIssues.add(issue);
-										}
+
+
+						Training.append( issue.getAffectedComponent().getTenant().getName()+SEP
+								+ issue.getAffectedComponent().getType().getName() + SEP
+								+ issue.eClass().getName() + SEP 
+								+  ArchitectureUtilCal.computeComponentUtility(issue.getAffectedComponent())+SEP
+								+ (ArchitectureUtilCal.computeComponentUtility(issue.getAffectedComponent())+r.getUtilityIncrease() )+ SEP 
+								+ issue.getAffectedComponent().getType().getCriticality() + SEP
+								+ r.getCosts() + SEP
+								+ numberOfConnectors + SEP
+								+ reliability + SEP 
+								+ issue.getAffectedComponent().getTenant().getImportance() + SEP
+								+ numberOfProvided + SEP
+								+ issue.getAffectedComponent().getRequiredInterfaces().size() + SEP
+								+ issue.getAffectedComponent().getADT() + SEP 
+								+ r.eClass().getName() + SEP
+								+ issue.getAffectedComponent().getType().getPerformanceMax() + SEP
+								+ (4 / issue.getAffectedComponent().getType().getSatPoint()) + SEP
+								+ issue.getAffectedComponent().getInUseReplica() + SEP
+								+ issue.getAffectedComponent().getRequest() + SEP 
+								+ "\n"
+
+								);
+
+
+
+					}
+
+					Training.append("\n");
+				}
+
+
+				/*
+				 * Retrieve the predicted costs of the last remaining rule
+				 * for each issue. The rules in the model are those that are
+				 * executed next.
+				 */
+
+
+				/*
+				 * Execute
+				 */
+				List<Component> BACKUPcomp = new LinkedList<>();
+				for (Issue issue : allIssues) {
+					// System.out.print("\n here
+					// "+issue.getAffectedComponent().getType());
+					BACKUPcomp.add(issue.getAffectedComponent());
+				}
+				// for (Component component : BACKUPcomp)
+				// {component.}
+
+
+				if (CURRENT_APPROACH == Approaches.Learning) {
+
+					// Get custom fix ordering from the controller
+					System.out.println("Waiting for Python to send order in which to apply fixes...");
+					String fromPython = "";
+					HashMap<String, HashMap<String, String>> fixOrder = new HashMap<String, HashMap<String, String>>();
+					while(true) {
+						fromPython = RuleSelector.in.readLine();
+
+						try {
+							// get order in which to apply fixes from python
+							fixOrder = new ObjectMapper().readValue(fromPython, HashMap.class);
+
+							RuleSelector.out.println("fix_order_received");
+							RuleSelector.logger.println("fix_order_received");
+							break;
+						} catch (IOException e) {
+							System.out.println("Did not receive valid json from Python:");
+							System.out.println(fromPython);
+							continue;
+						}
+
+					}
+
+					// reorder the issues according to the order sent by the controller
+					List<Issue> orderedIssues = new LinkedList<>();
+					for (String key: fixOrder.keySet()) {
+						String shopName = fixOrder.get(key).get("shop");
+						String issueName = fixOrder.get(key).get("issue");
+						String componentName = fixOrder.get(key).get("component");
+
+						for (Issue issue: allIssues) {
+							if (issue.getAffectedComponent().getTenant().getName().equals(shopName)) {
+								if (issue.getClass().getSimpleName().replaceAll("Impl", "").equals(issueName)) {
+									if (issue.getAffectedComponent().getType().getName().equals(componentName)) {
+										orderedIssues.add(issue);
 									}
 								}
 							}
 						}
-						
-						System.out.println("allIssues: " + allIssues);
-						System.out.println("orderedIssues: " + orderedIssues);
-						
-						assert orderedIssues.size() == allIssues.size();
-						
-						allIssues = orderedIssues;
-						
 					}
-					
-					execute(interpreter, allIssues, E_CF1, E_CF2, E_CF3, E_CF5);
-					
+
+					System.out.println("allIssues: " + allIssues);
+					System.out.println("orderedIssues: " + orderedIssues);
+
+					assert orderedIssues.size() == allIssues.size();
+
+					allIssues = orderedIssues;
+
+				}
+
+				execute(interpreter, allIssues, E_CF1, E_CF2, E_CF3, E_CF5);
+
+
+				if (CURRENT_APPROACH == Approaches.Learning) {
+
 					// sample affected components one more time (get all params sampled in getComponentsUtility)
 					ObjectMapper mapper = new ObjectMapper();
 					HashMap<String, HashMap<String, HashMap<String, Double>>> issueToRulesMapFromFile = null;
@@ -447,12 +450,12 @@ public class Task_1 {
 					String fromPython = "";
 					while(true) {
 						fromPython = RuleSelector.in.readLine();
-						
+
 						try {
 							// get components fixed in this run from python
 							HashMap<String, List<String>> fixedComponents = new HashMap<String, List<String>>();
 							fixedComponents = new ObjectMapper().readValue(fromPython, HashMap.class);
-							
+
 							// lookup their current state and send to python
 							String state = "not_available";
 							state = Observations.getFixedComponentStatus(architecture, fixedComponents);
@@ -466,7 +469,7 @@ public class Task_1 {
 						}
 
 					}
-					
+
 
 					annotations.getIssues().clear();
 					annotations.getRules().clear();
@@ -481,17 +484,19 @@ public class Task_1 {
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
-					
-					
-				}//nex Run
 
-				// call the simulator to validate the model.
-				issueCount = simulator.validate();
-				if (issueCount > 0) {
-					System.out.println("\n Issue are remaining in the model!!!!! \n");
 				}
-				System.out.printf("\n >>Execution Completed! \n\n");
-				/*for (Tenant shop : architecture.getTenants()) {
+
+
+			}//nex Run
+
+			// call the simulator to validate the model.
+			issueCount = simulator.validate();
+			if (issueCount > 0) {
+				System.out.println("\n Issue are remaining in the model!!!!! \n");
+			}
+			System.out.printf("\n >>Execution Completed! \n\n");
+			/*for (Tenant shop : architecture.getTenants()) {
 					for (Component component : shop.getComponents()) {
 						System.out.printf("\n\n +++ Component "+component.getType().getName());
 						System.out.printf("\nCriticality "+ component.getType().getCriticality()); 
@@ -499,34 +504,34 @@ public class Task_1 {
 						System.out.printf("\nReliability "+component.getType().getReliability() );
 						System.out.printf("\nImportance "+component.getTenant().getImportance());
 						System.out.printf("\nADT"+component.getADT());}
-						
-				
-					
+
+
+
 				}*/
-				System.out.println("\n Overall Utility After Execution: " + ArchitectureUtilCal.computeOverallUtility(architecture));
-				
-			} // next simulation run
+			System.out.println("\n Overall Utility After Execution: " + ArchitectureUtilCal.computeOverallUtility(architecture));
 
-			
-			/*
-			 * Save model
-			 */
-			// EnvSetUp.save(architectureResource, "model/mRUBiS_RESULT_" + i
-			// + ".comparch");
-			
+		} // next simulation run
 
-				
 
-		
-	
+		/*
+		 * Save model
+		 */
+		// EnvSetUp.save(architectureResource, "model/mRUBiS_RESULT_" + i
+		// + ".comparch");
+
+
+
+
+
+
 
 		if (Log) {
-			
+
 			Training.flush();
 			Training.close();
-			
+
 		}
-		
+
 
 	}
 
@@ -539,7 +544,7 @@ public class Task_1 {
 
 	}
 
-	
+
 
 	private static void analyze(MLSDMInterpreter interpreter, Annotations annotations, Activity A_CF1, Activity A_CF2,
 			Activity A_CF3, Activity A_CF5) throws SDMException {
@@ -563,40 +568,40 @@ public class Task_1 {
 				interpreter.executeActivity(A_CF3, parameters);
 
 			} else
-			// Change of the number of Failures attached to a ProvidedInterface
-			// --> check for CF2
-			if (feature == ComparchPackage.Literals.PROVIDED_INTERFACE__FAILURES) {
-				ProvidedInterface providedInterface = (ProvidedInterface) notifier;
-				// System.out.print("\n Component cf3
-				// "+providedInterface.getComponent().getType().getName()+"\n");
+				// Change of the number of Failures attached to a ProvidedInterface
+				// --> check for CF2
+				if (feature == ComparchPackage.Literals.PROVIDED_INTERFACE__FAILURES) {
+					ProvidedInterface providedInterface = (ProvidedInterface) notifier;
+					// System.out.print("\n Component cf3
+					// "+providedInterface.getComponent().getType().getName()+"\n");
 
-				Collection<Variable<EClassifier>> parameters = new ArrayList<Variable<EClassifier>>();
-				parameters.add(createParameter("providedInterface", providedInterface));
-				parameters.add(createParameter("annotations", annotations));
+					Collection<Variable<EClassifier>> parameters = new ArrayList<Variable<EClassifier>>();
+					parameters.add(createParameter("providedInterface", providedInterface));
+					parameters.add(createParameter("annotations", annotations));
 
-				// execute A_CF2
-				interpreter.executeActivity(A_CF2, parameters);
+					// execute A_CF2
+					interpreter.executeActivity(A_CF2, parameters);
 
-			} else
-			// Add/Remove of a Connector from to a RequiredInterface --> check
-			// for CF4
-			if (feature == ComparchPackage.Literals.REQUIRED_INTERFACE__CONNECTOR) {
-				// skip for now
-			} else
-			// Drop of the Efficiency of a component --> check
-			// for CF5
-			// if (feature ==
-			// ComparchPackage.Literals.ARCHITECTURAL_ELEMENT__EFFICIENCY) {
-			if (feature == ComparchPackage.Literals.ARCHITECTURAL_ELEMENT__REQUEST) {
-				Component component = (Component) notifier;
-				Collection<Variable<EClassifier>> parameters = new ArrayList<Variable<EClassifier>>();
-				parameters.add(createParameter("component", component));
-				parameters.add(createParameter("annotations", annotations));
+				} else
+					// Add/Remove of a Connector from to a RequiredInterface --> check
+					// for CF4
+					if (feature == ComparchPackage.Literals.REQUIRED_INTERFACE__CONNECTOR) {
+						// skip for now
+					} else
+						// Drop of the Efficiency of a component --> check
+						// for CF5
+						// if (feature ==
+						// ComparchPackage.Literals.ARCHITECTURAL_ELEMENT__EFFICIENCY) {
+						if (feature == ComparchPackage.Literals.ARCHITECTURAL_ELEMENT__REQUEST) {
+							Component component = (Component) notifier;
+							Collection<Variable<EClassifier>> parameters = new ArrayList<Variable<EClassifier>>();
+							parameters.add(createParameter("component", component));
+							parameters.add(createParameter("annotations", annotations));
 
-				// execute A_CF5
-				interpreter.executeActivity(A_CF5, parameters);
+							// execute A_CF5
+							interpreter.executeActivity(A_CF5, parameters);
 
-			}
+						}
 
 		}
 
@@ -647,7 +652,7 @@ public class Task_1 {
 				interpreter.executeActivity(P_CF5, parameters);
 
 			}
-			
+
 		}
 	}
 
@@ -735,6 +740,6 @@ public class Task_1 {
 		}
 		logger.removeHandler(toBeRemoved);
 	}
-	
+
 
 }
