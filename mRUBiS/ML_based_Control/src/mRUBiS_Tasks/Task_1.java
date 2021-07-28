@@ -380,30 +380,56 @@ public class Task_1 {
 					// {component.}
 					
 					
-					// Get custom fix ordering from Python
-					System.out.println("Waiting for Python to send order in which to apply fixes...");
-					String fromPython = "";
-					while(true) {
-						fromPython = RuleSelector.in.readLine();
+					if (CURRENT_APPROACH == Approaches.Learning) {
 						
-						try {
-							// get components fixed in this run from python
-							HashMap<String, HashMap<String, String>> fixOrder = new HashMap<String, HashMap<String, String>>();
-							fixOrder = new ObjectMapper().readValue(fromPython, HashMap.class);
+						// Get custom fix ordering from the controller
+						System.out.println("Waiting for Python to send order in which to apply fixes...");
+						String fromPython = "";
+						HashMap<String, HashMap<String, String>> fixOrder = new HashMap<String, HashMap<String, String>>();
+						while(true) {
+							fromPython = RuleSelector.in.readLine();
 							
-							RuleSelector.out.println("fix_order_received");
-							RuleSelector.logger.println("fix_order_received");
-							break;
-						} catch (IOException e) {
-							System.out.println("Did not receive valid json from Python:");
-							System.out.println(fromPython);
-							continue;
+							try {
+								// get order in which to apply fixes from python
+								fixOrder = new ObjectMapper().readValue(fromPython, HashMap.class);
+								
+								RuleSelector.out.println("fix_order_received");
+								RuleSelector.logger.println("fix_order_received");
+								break;
+							} catch (IOException e) {
+								System.out.println("Did not receive valid json from Python:");
+								System.out.println(fromPython);
+								continue;
+							}
+
 						}
-
+						
+						// reorder the issues according to the order sent by the controller
+						List<Issue> orderedIssues = new LinkedList<>();
+						for (String key: fixOrder.keySet()) {
+							String shopName = fixOrder.get(key).get("shop");
+							String issueName = fixOrder.get(key).get("issue");
+							String componentName = fixOrder.get(key).get("component");
+							
+							for (Issue issue: allIssues) {
+								if (issue.getAffectedComponent().getTenant().getName().equals(shopName)) {
+									if (issue.getClass().getSimpleName().replaceAll("Impl", "").equals(issueName)) {
+										if (issue.getAffectedComponent().getType().getName().equals(componentName)) {
+											orderedIssues.add(issue);
+										}
+									}
+								}
+							}
+						}
+						
+						System.out.println("allIssues: " + allIssues);
+						System.out.println("orderedIssues: " + orderedIssues);
+						
+						assert orderedIssues.size() == allIssues.size();
+						
+						allIssues = orderedIssues;
+						
 					}
-					
-					
-
 					
 					execute(interpreter, allIssues, E_CF1, E_CF2, E_CF3, E_CF5);
 					
@@ -418,7 +444,7 @@ public class Task_1 {
 
 
 					System.out.println("Waiting for Python to send fixed components JSON...");
-					fromPython = "";
+					String fromPython = "";
 					while(true) {
 						fromPython = RuleSelector.in.readLine();
 						

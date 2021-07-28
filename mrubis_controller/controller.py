@@ -168,12 +168,11 @@ class MRubisController():
         self.socket.close()
 
     def _state_to_df(self, fix_status):
-        state_df = pd.DataFrame.from_dict({
+        return pd.DataFrame.from_dict({
             (fix_status, shop, component): self.mrubis_state[shop][component] 
                 for shop in self.mrubis_state.keys() 
                 for component in self.mrubis_state[shop].keys()},
             orient='index')
-        return state_df
 
     def _write_state_history_to_disk(self, filename='mrubis'):
         history_df = pd.concat(self.mrubis_state_history, keys=np.repeat(np.arange(1, len(self.mrubis_state_history)+1), 2)).reset_index()
@@ -269,4 +268,4 @@ class MRubisController():
 
 if __name__ == "__main__":
     controller = MRubisController()
-    controller.run(external_start=True, max_runs=100, rule_picking_method='highest')
+    controller.run(external_start=True, max_runs=100, rule_picking_method='lowest')
