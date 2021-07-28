@@ -66,6 +66,8 @@ public class Observations {
 			parameterMap.put("replica", String.valueOf(component.getInUseReplica()));
 			parameterMap.put("perf_max", String.valueOf(component.getType().getPerformanceMax()));
 			parameterMap.put("component_utility", String.valueOf(ArchitectureUtilCal.computeComponentUtility(component)));
+			parameterMap.put("system_utility", String.valueOf(ArchitectureUtilCal.computeOverallUtility(shop.getArchitecture())));
+			parameterMap.put("shop_utility", String.valueOf(ArchitectureUtilCal.computeShopUtility(shop)));
 			componentMap.put(component.getType().getName() , parameterMap);
 		}
 
@@ -156,6 +158,8 @@ public class Observations {
 						parameterMap.put("replica", String.valueOf(affectedComponent.getInUseReplica()));
 						parameterMap.put("perf_max", String.valueOf(affectedComponent.getType().getPerformanceMax()));
 						parameterMap.put("component_utility", String.valueOf(ArchitectureUtilCal.computeComponentUtility(affectedComponent)));
+						parameterMap.put("system_utility", String.valueOf(ArchitectureUtilCal.computeOverallUtility(shop.getArchitecture())));
+						parameterMap.put("shop_utility", String.valueOf(ArchitectureUtilCal.computeShopUtility(shop)));
 
 						componentMap.put(affectedComponentType , parameterMap);
 						
@@ -239,6 +243,8 @@ public class Observations {
 						parameterMap.put("replica", String.valueOf(component.getInUseReplica()));
 						parameterMap.put("perf_max", String.valueOf(component.getType().getPerformanceMax()));
 						parameterMap.put("component_utility", String.valueOf(ArchitectureUtilCal.computeComponentUtility(component)));
+						parameterMap.put("system_utility", String.valueOf(ArchitectureUtilCal.computeOverallUtility(shop.getArchitecture())));
+						parameterMap.put("shop_utility", String.valueOf(ArchitectureUtilCal.computeShopUtility(shop)));
 						
 						componentMap.put(componentType, parameterMap);
 						

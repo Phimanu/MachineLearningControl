@@ -97,8 +97,9 @@ class MRubisController():
         rule_costs = [float(costs) for costs in component_params['rule_costs'].strip('[]').split(',')]
         return shop_name, component_name, component_params, issue_name, rules, rule_costs
 
-    @staticmethod
-    def _pick_rule(component_name, rules, rule_costs, method='lowest'):
+    def _pick_rule(self, issue, method='lowest'):
+        _, component_name, _, _, rules, rule_costs = self._get_info_from_issue(issue)
+
         # ReplaceComponent can only be used on Authentication Service
         if component_name != 'Authentication Service':
             rule_costs = [cost for idx, cost in enumerate(rule_costs) if rules[idx] != 'ReplaceComponent']
@@ -126,13 +127,13 @@ class MRubisController():
             self.components_fixed_in_this_run[shop_name] = []
         self.components_fixed_in_this_run[shop_name].append(component_name)
 
-    def _predict_optimal_component_utility(self):
+    def _predict_optimal_utility_of_fixed_components(self):
         for shop, fixed_components in self.components_fixed_in_this_run.items():
             for component in fixed_components:
                 component_params = self.mrubis_state[shop][component]
                 predicted_utility = self.utility_model.predict_on_mrubis_output(
                     pd.DataFrame(component_params, index=[0])
-                )
+                )[0]
                 self.mrubis_state[shop][component]['predicted_optimal_utility'] = predicted_utility
 
     def _send_exit_message(self):
@@ -168,20 +169,6 @@ class MRubisController():
                 for param, value in component_params.items():
                     self.mrubis_state[shop][component_type][param] = value
 
-    def _get_system_utility(self):
-        '''Calculates the utility for the entire system (across shops)'''
-        total_utility = 0
-        for shop_attributes in self.mrubis_state.values():
-            for comp_attributes in shop_attributes.values():
-                total_utility += float(comp_attributes['component_utility'])
-        return total_utility
-
-    def _write_system_utility_into_state(self):
-        system_utility = self._get_system_utility()
-        for shop, shop_components in self.mrubis_state.items():
-            for component_type, _ in shop_components.items():
-                self.mrubis_state[shop][component_type]['sys_utility'] = system_utility
-
     def _remove_replaced_authentication_service(self):
         for shop, shop_components in self.mrubis_state.copy().items():
             if len([comp for comp in list(shop_components.keys()) if 'Authentication Service' in comp]) > 1:
@@ -200,6 +187,7 @@ class MRubisController():
 
         self._connect_to_java()
 
+        # Train the model on the provided batch file
         self.utility_model.load_train_data()
         self.utility_model.train_on_batch_file()
 
@@ -216,37 +204,32 @@ class MRubisController():
             if self.run_counter == 1:
                 self._get_initial_state()
 
-            
             while self.number_of_issues_handled_in_this_run < self.number_of_issues_in_run:
 
+                # Check how many issues there are (equals # of queries to send)
                 self._update_number_of_issues_in_run()
 
                 # Get the current issue to handle
                 current_issue = self._get_from_mrubis('get_issue')
                 self._update_current_state(current_issue)
 
-                # Get available rules, pick rule, send it to mRUBiS
-                _, component_name, _, _, rules, rule_costs = self._get_info_from_issue(current_issue)
-                picked_rule = self._pick_rule(component_name, rules, rule_costs, method=rule_picking_method)
+                # Pick rule, send it to mRUBiS
+                picked_rule = self._pick_rule(current_issue, method=rule_picking_method)
                 self._send_rule_to_execute(current_issue, picked_rule)
 
                 self.number_of_issues_handled_in_this_run += 1
 
-            print(f'System utility before taking action: {self._get_system_utility()}')
-            self._write_system_utility_into_state()
             self._append_current_state_to_history(fix_status='before')
 
             print(f'Applied actions to these components in this run: {self.components_fixed_in_this_run}')
 
-            self._predict_optimal_component_utility()
+            self._predict_optimal_utility_of_fixed_components()
 
             print("Getting state of affected components after taking action...")
             state_after_action = self._get_from_mrubis(message=json.dumps(self.components_fixed_in_this_run))
             self._update_current_state(state_after_action)
             self._remove_replaced_authentication_service()
 
-            print(f'System utility after taking action: {self._get_system_utility()}')
-            self._write_system_utility_into_state()
             self._append_current_state_to_history(fix_status='after')
 
         self._send_exit_message()
@@ -259,4 +242,4 @@ class MRubisController():
 
 if __name__ == "__main__":
     controller = MRubisController()
-    controller.run(external_start=True, max_runs=100, rule_picking_method='lowest')
+    controller.run(external_start=True, max_runs=100, rule_picking_method='highest')
