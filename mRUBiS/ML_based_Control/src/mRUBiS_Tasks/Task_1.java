@@ -422,12 +422,12 @@ public class Task_1 {
 						}
 					}
 
-					System.out.println("allIssues: " + allIssues);
-					System.out.println("orderedIssues: " + orderedIssues);
+					System.out.println("org: " + allIssues);
+					System.out.println("ord: " + orderedIssues);
 
 					assert orderedIssues.size() == allIssues.size();
 
-					allIssues = orderedIssues;
+					//allIssues = orderedIssues;
 
 				}
 
@@ -486,7 +486,6 @@ public class Task_1 {
 					}
 
 				}
-
 
 			}//nex Run
 

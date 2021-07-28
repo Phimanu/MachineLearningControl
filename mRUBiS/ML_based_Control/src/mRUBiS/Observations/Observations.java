@@ -189,7 +189,11 @@ public class Observations {
 	
 	public static String getFixedComponentStatus(Architecture MRUBIS, HashMap<String, List<String>> fixedComponents){
 		
-		System.out.println("Components fixed in this run: " + fixedComponents);
+		System.out.println("Components fixed in this run: ");
+		for (String shopName: fixedComponents.keySet()) {
+			System.out.println(shopName + ": " + fixedComponents.get(shopName));
+		};
+		System.out.println();
 
 		String json = "";
 
@@ -199,11 +203,12 @@ public class Observations {
 		{
 
 			List<Component> shopComponents = shop.getComponents();
+			String shopName = shop.getName();
 			HashMap<String, HashMap<String, String>> componentMap = new HashMap<String, HashMap<String, String>>();
 			
-			if (fixedComponents.containsKey(shop.getName())) {
+			if (fixedComponents.containsKey(shopName)) {
 				
-				List<String> fixedComponentsInThisShop = fixedComponents.get(shop.getName());
+				List<String> fixedComponentsInThisShop = fixedComponents.get(shopName);
 				
 				for (Component component: shopComponents) {
 					
@@ -212,7 +217,7 @@ public class Observations {
 					
 					if (fixedComponentsInThisShop.contains(componentType)) {
 						
-						System.out.println("Obs: Updating fixed component " + componentType);
+						System.out.println(shopName + ": Updating fixed component " + componentType);
 						
 						// check if the component still has any remaining issues
 						String failureName = "";
