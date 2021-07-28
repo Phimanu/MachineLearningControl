@@ -114,15 +114,14 @@ public class Observations {
 			
 			String shopName = shop.getName();
 			
-			System.out.println("Current shop: " + shopName);
-			System.out.println("Current issuesmap: " + issuesToRulesMap);
-			
 			if (issuesToRulesMap.containsKey(shopName)) {
 				
 				HashMap<String, HashMap<String, String>> componentMap = new HashMap<String, HashMap<String, String>>();
 				HashMap<String, HashMap<String, HashMap<String, Double>>> shopIssueToRulesMap = issuesToRulesMap.get(shopName);
 
 				List<Issue> issues = MRUBIS.getAnnotations().getIssues();
+				
+				System.out.println("Current issuesmap: " + issuesToRulesMap);
 
 				for ( Issue issue: issues) {
 
@@ -164,9 +163,9 @@ public class Observations {
 						componentMap.put(affectedComponentType , parameterMap);
 						
 					} else {
-						System.out.println("Failed to find rule for issue " + failureName + " affecting component " + affectedComponentType);
-						System.out.println("Current issue to rules map: " + issuesToRulesMap.get(failureName));
-						System.out.println("Current affected component: " + affectedComponentType);
+//						System.out.println("Failed to find rule for issue " + failureName + " affecting component " + affectedComponentType);
+//						System.out.println("Current issue to rules map: " + issuesToRulesMap.get(failureName));
+//						System.out.println("Current affected component: " + affectedComponentType);
 					}
 				
 
@@ -189,6 +188,8 @@ public class Observations {
 	}
 	
 	public static String getFixedComponentStatus(Architecture MRUBIS, HashMap<String, List<String>> fixedComponents){
+		
+		System.out.println("Components fixed in this run: " + fixedComponents);
 
 		String json = "";
 
@@ -203,7 +204,6 @@ public class Observations {
 			if (fixedComponents.containsKey(shop.getName())) {
 				
 				List<String> fixedComponentsInThisShop = fixedComponents.get(shop.getName());
-				System.out.println(shop.getName() + ": Fixed components in this run: " + fixedComponents);
 				
 				for (Component component: shopComponents) {
 					
