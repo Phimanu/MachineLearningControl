@@ -129,11 +129,11 @@ class MRubisController():
         # Remember components that have been fixed in this run
         if self.components_fixed_in_this_run.get(shop_name) is None:
             self.components_fixed_in_this_run[shop_name] = []
-        self.components_fixed_in_this_run[shop_name].append(component_name)
+        self.components_fixed_in_this_run[shop_name].append((issue_name, component_name))
 
     def _predict_optimal_utility_of_fixed_components(self):
         for shop, fixed_components in self.components_fixed_in_this_run.items():
-            for component in fixed_components:
+            for issue_name, component in fixed_components:
                 component_params = self.mrubis_state[shop][component]
                 predicted_utility = self.utility_model.predict_on_mrubis_output(
                     pd.DataFrame(component_params, index=[0])
@@ -141,13 +141,19 @@ class MRubisController():
                 self.mrubis_state[shop][component]['predicted_optimal_utility'] = predicted_utility
 
     def _get_component_fixing_order(self, state_df_before):
-        return state_df_before.dropna(subset=['predicted_optimal_utility'])\
+        fix_order_tuples = state_df_before.dropna(subset=['predicted_optimal_utility'])\
                               .sort_values(by='predicted_optimal_utility', ascending=False)\
                               .reset_index(level=0)\
                               .set_index('failure_name', append=True)\
                               .reorder_levels([0,2,1])\
                               .index\
                               .tolist()
+        fix_order_dicts = {shop: (issue, comp) for shop, issue, comp in fix_order_tuples}
+        all_fix_order_tuples = []
+        for shop, _ in fix_order_dicts.items():
+            for i_c_tuple in self.components_fixed_in_this_run[shop]:
+                all_fix_order_tuples.append((shop, i_c_tuple[0], i_c_tuple[1]))
+        return all_fix_order_tuples
 
     def _send_order_in_which_to_apply_fixes(self, order_tuples):
         logger.debug('Sending order in which to apply fixes to mRUBIS...')
@@ -193,7 +199,12 @@ class MRubisController():
                     self.mrubis_state[shop][component_type] = {}
                 for param, value in component_params.items():
                     self.mrubis_state[shop][component_type][param] = value
-                self.mrubis_state[shop][component_type]['predicted_optimal_utility'] = np.nan
+    
+    def _reset_predicted_utility(self):
+        for shop, shop_components in self.mrubis_state.items():
+            for component, _ in shop_components.items():
+                self.mrubis_state[shop][component]['predicted_optimal_utility'] = np.nan
+
 
     def _remove_replaced_authentication_service(self):
         for shop, shop_components in self.mrubis_state.copy().items():
@@ -253,14 +264,20 @@ class MRubisController():
             self.mrubis_state_history.append(state_df_before)
 
             component_fixing_order = self._get_component_fixing_order(state_df_before)
+            if len(component_fixing_order) != self.number_of_issues_handled_in_this_run:
                 logger.error(f'Lost track of a fix somewhere')
             logger.info(f'Fixing in this order: {component_fixing_order}')
             self._send_order_in_which_to_apply_fixes(component_fixing_order)
 
             logger.info("Getting state of affected components after taking action...")
-            state_after_action = self._get_from_mrubis(message=json.dumps(self.components_fixed_in_this_run))
+            state_after_action = self._get_from_mrubis(
+                message=json.dumps(
+                    {shop_name: [i_c_tuple[1] for i_c_tuple in i_c_tuples] for shop_name, i_c_tuples in self.components_fixed_in_this_run.items()}
+                )
+            )
             self._update_current_state(state_after_action)
             self._remove_replaced_authentication_service()
+            self._reset_predicted_utility()
 
             state_df_after = self._state_to_df(fix_status='after')
             self.mrubis_state_history.append(state_df_after)
@@ -276,4 +293,4 @@ class MRubisController():
 if __name__ == "__main__":
     
     controller = MRubisController()
-    controller.run(external_start=True, max_runs=500, rule_picking_method='lowest')
+    controller.run(external_start=True, max_runs=500, rule_picking_method='highest')
