@@ -12,9 +12,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
@@ -405,11 +407,14 @@ public class Task_1 {
 					}
 
 					// reorder the issues according to the order sent by the controller
+					
+					System.out.println("org: " + allIssues);
+					
 					List<Issue> orderedIssues = new LinkedList<>();
-					for (String key: fixOrder.keySet()) {
-						String shopName = fixOrder.get(key).get("shop");
-						String issueName = fixOrder.get(key).get("issue");
-						String componentName = fixOrder.get(key).get("component");
+					for (String priority: fixOrder.keySet()) {
+						String shopName = fixOrder.get(priority).get("shop");
+						String issueName = fixOrder.get(priority).get("issue");
+						String componentName = fixOrder.get(priority).get("component");
 
 						for (Issue issue: allIssues) {
 							if (issue.getAffectedComponent().getTenant().getName().equals(shopName)) {
@@ -422,12 +427,23 @@ public class Task_1 {
 						}
 					}
 
-					System.out.println("org: " + allIssues);
 					System.out.println("ord: " + orderedIssues);
+					
+					List<Issue> issueDiff = new ArrayList(allIssues);
+					issueDiff.removeAll(orderedIssues);
+					
+					if (issueDiff.size() > 0) {
+						System.out.println("!!!Found unmatched issue: " + issueDiff.get(0).getClass().getSimpleName());
+						System.out.println("Unmatched issue comp: " + issueDiff.get(0).getAffectedComponent().getType().getName());
+						System.out.println("Unmatched issue shop: " + issueDiff.get(0).getAffectedComponent().getTenant().getName());
+						System.out.println("Unmatched issue order: " + fixOrder);
+					}
+					
+					System.out.println("Org and ord issues diff: " + issueDiff);
 
 					assert orderedIssues.size() == allIssues.size();
 
-					//allIssues = orderedIssues;
+					allIssues = orderedIssues;
 
 				}
 
@@ -453,6 +469,7 @@ public class Task_1 {
 
 						try {
 							// get components fixed in this run from python
+							//HashMap<String, List<String>> fixedComponents = new HashMap<String, List<String>>();
 							HashMap<String, List<String>> fixedComponents = new HashMap<String, List<String>>();
 							fixedComponents = new ObjectMapper().readValue(fromPython, HashMap.class);
 
