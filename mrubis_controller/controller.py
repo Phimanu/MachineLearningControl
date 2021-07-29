@@ -7,7 +7,6 @@ from json.decoder import JSONDecodeError
 from subprocess import PIPE, Popen
 from time import sleep
 
-from numpy.lib.ufunclike import fix
 from component_utility_predictor import RidgeUtilityPredictor
 
 import pandas as pd
@@ -247,12 +246,14 @@ class MRubisController():
                 self.number_of_issues_handled_in_this_run += 1
 
             logger.info(f'Total number of issues to handle in current run: {self.number_of_issues_in_run}')
+            logger.info(f'Total number of issues handled: {self.number_of_issues_handled_in_this_run}')
 
             self._predict_optimal_utility_of_fixed_components()
             state_df_before = self._state_to_df(fix_status='before')
             self.mrubis_state_history.append(state_df_before)
 
             component_fixing_order = self._get_component_fixing_order(state_df_before)
+                logger.error(f'Lost track of a fix somewhere')
             logger.info(f'Fixing in this order: {component_fixing_order}')
             self._send_order_in_which_to_apply_fixes(component_fixing_order)
 
