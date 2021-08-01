@@ -140,17 +140,29 @@ class MRubisController():
                 )[0]
                 self.mrubis_state[shop][component]['predicted_optimal_utility'] = predicted_utility
 
-    def _get_component_fixing_order(self, state_df_before):
-        fix_order_tuples = state_df_before.dropna(subset=['predicted_optimal_utility'])\
-                              .sort_values(by='predicted_optimal_utility', ascending=False)\
-                              .reset_index(level=0)\
-                              .set_index('failure_name', append=True)\
-                              .reorder_levels([0,2,1])\
-                              .index\
-                              .tolist()
-        fix_order_dicts = {shop: (issue, comp) for shop, issue, comp in fix_order_tuples}
+    def __get_ranked_fix_instructions(self, state_df_before:pd.DataFrame, ranking_strategy):
+        rows_with_failure = state_df_before.dropna(subset=['predicted_optimal_utility'])
+        if ranking_strategy == 'cost':
+            rows_with_failure['min_cost'] = rows_with_failure['rule_costs'].apply(min)
+            sorted_rows = rows_with_failure.sort_values(by='min_cost', ascending=True)
+        elif ranking_strategy == 'utility':
+            sorted_rows = rows_with_failure.sort_values(by='predicted_optimal_utility', ascending=False)
+        elif ranking_strategy == 'random':
+            sorted_rows = rows_with_failure.sample(frac=1)
+        else:
+            raise NotImplementedError(f'Strategy {ranking_strategy} is not implemented!')
+        ranked_fix_instructions = sorted_rows.reset_index(level=0)\
+                                             .set_index('failure_name', append=True)\
+                                             .reorder_levels([0,2,1])\
+                                             .index\
+                                             .tolist()
+        return ranked_fix_instructions
+
+    def _get_component_fixing_order(self, state_df_before:pd.DataFrame, ranking_strategy:str='utility'):
+        ranked_fix_instructions_tuples = self.__get_ranked_fix_instructions(state_df_before, ranking_strategy)
+        ranked_fix_instructions_dict = {shop: (issue, comp) for shop, issue, comp in ranked_fix_instructions_tuples}
         all_fix_order_tuples = []
-        for shop, _ in fix_order_dicts.items():
+        for shop, _ in ranked_fix_instructions_dict.items():
             for i_c_tuple in self.components_fixed_in_this_run[shop]:
                 all_fix_order_tuples.append((shop, i_c_tuple[0], i_c_tuple[1]))
         return all_fix_order_tuples
@@ -223,7 +235,7 @@ class MRubisController():
                     if 'Authentication Service' in component_type and np.isclose(float(component_params['component_utility']), 0):
                         del self.mrubis_state[shop][component_type]
 
-    def run(self, external_start=False, max_runs=100, rule_picking_method='lowest'):
+    def run(self, external_start=False, max_runs=100, rule_picking_method='lowest', issue_ranking_strategy='utility'):
 
         if not external_start:
             self._start_mrubis()
@@ -273,9 +285,7 @@ class MRubisController():
             state_df_before = self._state_to_df(fix_status='before')
             self.mrubis_state_history.append(state_df_before)
 
-            component_fixing_order = self._get_component_fixing_order(state_df_before)
-            if len(component_fixing_order) != self.number_of_issues_handled_in_this_run:
-                logger.error(f'Lost track of a fix somewhere')
+            component_fixing_order = self._get_component_fixing_order(state_df_before, ranking_strategy=issue_ranking_strategy)
             logger.info(f'Fixing in this order: {component_fixing_order}')
             self._send_order_in_which_to_apply_fixes(component_fixing_order)
 
@@ -298,9 +308,9 @@ class MRubisController():
         if not external_start:
             self._stop_mrubis()
 
-        self._write_state_history_to_disk(filename=f'{max_runs}_runs_{rule_picking_method}')
+        self._write_state_history_to_disk(filename=f'{max_runs}_runs_{rule_picking_method}_{issue_ranking_strategy}')
 
 if __name__ == "__main__":
     
     controller = MRubisController()
-    controller.run(external_start=True, max_runs=100, rule_picking_method='highest')
+    controller.run(external_start=True, max_runs=100, rule_picking_method='lowest', issue_ranking_strategy='utility')
