@@ -19,6 +19,7 @@ logger.setLevel(logging.INFO)
 class MRubisController():
 
     def __init__(self, host='localhost', port=8080, json_path='path.json', rule_approach='lowest') -> None:
+        '''Create a new instance of the mRubisController class'''
 
         # Put your command line here (In Eclipse: Run -> Run Configurations... -> Show Command Line)
         with open(json_path, 'r') as f:
@@ -48,6 +49,7 @@ class MRubisController():
         self.output_path = Path(__file__).parent.resolve() / 'output'
 
     def _start_mrubis(self):
+        '''Launch mRUBiS as a subprocess'''
         self.mrubis_process = Popen(
             self.launch_args, 
             stdin=PIPE, 
@@ -57,15 +59,18 @@ class MRubisController():
         )
 
     def _stop_mrubis(self):
+        '''Terminate the mRUBiS process'''
         self.mrubis_process.terminate()
 
     def _connect_to_java(self):
+        '''Connect to the socket opened on the java side'''
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sleep(1)
         self.socket.connect((self.host, self.port))
         logger.info('Connected to the Java side.')
 
     def _get_initial_state(self):
+        '''Query mRUBiS for the number of shops, get their initial states'''
         self.number_of_shops = self._get_from_mrubis('get_number_of_shops').get('number_of_shops')
         logger.info(f'Number of mRUBIS shops: {self.number_of_shops}')
         for _ in range(self.number_of_shops):
@@ -74,10 +79,11 @@ class MRubisController():
             self.mrubis_state[shop_name] = shop_state[shop_name]
 
     def _update_number_of_issues_in_run(self):
+        '''Update the number of issues present in the current run'''
         self.number_of_issues_in_run = self._get_from_mrubis('get_number_of_issues_in_run').get('number_of_issues_in_run')
 
     def _get_from_mrubis(self, message):
-
+        '''Send a message to mRUBiS and return the response as a dictionary'''
         self.socket.send(f"{message}\n".encode("utf-8"))
         logger.debug(f'Waiting for mRUBIS to answer to message {message}')
         data = self.socket.recv(64000)
@@ -93,6 +99,7 @@ class MRubisController():
 
     @staticmethod
     def _get_info_from_issue(issue):
+        '''Parse relevant information out of an issue dictionary'''
         shop_name = next(iter(issue))
         component_name = next(iter(issue[shop_name]))
         component_params = issue.get(shop_name).get(component_name)
@@ -101,7 +108,8 @@ class MRubisController():
         rule_costs = [float(costs) for costs in component_params['rule_costs'].strip('[]').split(',')]
         return shop_name, component_name, component_params, issue_name, rules, rule_costs
 
-    def _pick_rule(self, issue, method='lowest'):
+    def _pick_rule(self, issue, strategy='lowest'):
+        '''Pick a rule to apply to an issue using a strategy'''
         _, component_name, _, _, rules, rule_costs = self._get_info_from_issue(issue)
 
         # ReplaceComponent can only be used on Authentication Service
@@ -109,14 +117,15 @@ class MRubisController():
             rule_costs = [cost for idx, cost in enumerate(rule_costs) if rules[idx] != 'ReplaceComponent']
             rules = [rule for rule in rules if rule != 'ReplaceComponent']
 
-        if method == 'random':
+        if strategy == 'random':
             return random.choice(rules)
-        if method == 'lowest':
+        if strategy == 'lowest':
             return rules[rule_costs.index(min(rule_costs))]
-        if method == 'highest':
+        if strategy == 'highest':
             return rules[rule_costs.index(max(rule_costs))]
 
     def _send_rule_to_execute(self, issue, rule):
+        '''Send a rule to apply to an issue to mRUBiS'''
         shop_name, component_name, _, issue_name, _, _ = self._get_info_from_issue(issue)
         picked_rule_message = {shop_name: {issue_name: {component_name: rule}}}
         logger.info(f"{shop_name}: Handling {issue_name} on {component_name} with {rule}")
@@ -132,6 +141,7 @@ class MRubisController():
         self.components_fixed_in_this_run[shop_name].append((issue_name, component_name))
 
     def _predict_optimal_utility_of_fixed_components(self):
+        '''Predict the optimal utility of a component which should be fixed'''
         for shop, fixed_components in self.components_fixed_in_this_run.items():
             for issue_name, component in fixed_components:
                 component_params = self.mrubis_state[shop][component]
@@ -141,6 +151,7 @@ class MRubisController():
                 self.mrubis_state[shop][component]['predicted_optimal_utility'] = predicted_utility
 
     def __get_ranked_fix_instructions(self, state_df_before:pd.DataFrame, ranking_strategy):
+        '''Get a list of tuples containing the fixes to apply ranked by a strategy'''
         rows_with_failure = state_df_before.dropna(subset=['predicted_optimal_utility'])
         if ranking_strategy == 'cost':
             rows_with_failure['min_cost'] = rows_with_failure['rule_costs'].apply(min)
@@ -159,6 +170,7 @@ class MRubisController():
         return ranked_fix_instructions
 
     def _get_component_fixing_order(self, state_df_before:pd.DataFrame, ranking_strategy:str='utility'):
+        '''Get a complete list of all components to fix ranked by a ranking strategy'''
         ranked_fix_instructions_tuples = self.__get_ranked_fix_instructions(state_df_before, ranking_strategy)
         ranked_fix_instructions_dict = {shop: (issue, comp) for shop, issue, comp in ranked_fix_instructions_tuples}
         all_fix_order_tuples = []
@@ -168,6 +180,7 @@ class MRubisController():
         return all_fix_order_tuples
 
     def _send_order_in_which_to_apply_fixes(self, order_tuples):
+        '''Send the order in which to apply the fixes to mRUBiS'''
         logger.debug('Sending order in which to apply fixes to mRUBIS...')
         order_dict = {idx: {
                 'shop': fix_tuple[0],
@@ -181,13 +194,16 @@ class MRubisController():
             logger.debug('Order transmitted successfully.')
 
     def _send_exit_message(self):
+        '''Tell mRUBiS to stop its main loop'''
         self.socket.send("exit\n".encode("utf-8"))
         _ = self.socket.recv(64000)
 
     def _close_socket(self):
+        '''Close the socket'''
         self.socket.close()
 
     def _state_to_df(self, fix_status):
+        '''Return the current mRUBiS state as a pandas dataframe'''
         state_df = pd.DataFrame.from_dict({
             (fix_status, shop, component): self.mrubis_state[shop][component] 
                 for shop in self.mrubis_state.keys() 
@@ -197,6 +213,7 @@ class MRubisController():
         return state_df
 
     def _set_shop_and_system_utility(self, state_df, fix_status):
+        '''Make the shop and system utility fields uniform across the run'''
         if fix_status == 'before':
             state_df['system_utility'] = state_df['system_utility'].min()
             state_df['shop_utility'] = state_df.groupby(level=[1])['shop_utility'].transform('min')
@@ -205,6 +222,7 @@ class MRubisController():
             state_df['shop_utility'] = state_df.groupby(level=[1])['shop_utility'].transform('max')
 
     def _write_state_history_to_disk(self, filename='mrubis'):
+        '''Write the state history to disk'''
         history_df = pd.concat(self.mrubis_state_history, keys=np.repeat(np.arange(1, len(self.mrubis_state_history)+1), 2)).reset_index()
         history_df.columns = ['run', 'fix_status', 'shop', 'component'] + list(history_df.columns)[4:]
         self.output_path.mkdir(exist_ok=True)
@@ -213,6 +231,7 @@ class MRubisController():
         #history_df.to_excel(self.output_path / f'{filename}.xls', index=False)
 
     def _update_current_state(self, incoming_state):
+        '''Update the controller's current mRUBiS state with an incoming state'''
         for shop, shop_components in incoming_state.items():
             for component_type, component_params in shop_components.items():
                 if shop not in self.mrubis_state.keys():
@@ -223,19 +242,22 @@ class MRubisController():
                     self.mrubis_state[shop][component_type][param] = value
     
     def _reset_predicted_utility(self):
+        '''Reset the predicted utility field for components that have been fixed'''
         for shop, shop_components in self.mrubis_state.items():
             for component, _ in shop_components.items():
                 self.mrubis_state[shop][component]['predicted_optimal_utility'] = np.nan
 
 
     def _remove_replaced_authentication_service(self):
+        '''Remove instances of the Authentication Service component that have been replaced'''
         for shop, shop_components in self.mrubis_state.copy().items():
             if len([comp for comp in list(shop_components.keys()) if 'Authentication Service' in comp]) > 1:
                 for component_type, component_params in shop_components.copy().items():
                     if 'Authentication Service' in component_type and np.isclose(float(component_params['component_utility']), 0):
                         del self.mrubis_state[shop][component_type]
 
-    def run(self, external_start=False, max_runs=100, rule_picking_method='lowest', issue_ranking_strategy='utility'):
+    def run(self, external_start=False, max_runs=100, rule_picking_strategy='lowest', issue_ranking_strategy='utility'):
+        '''Run and control mRUBiS for a maximum number of runs'''
 
         if not external_start:
             self._start_mrubis()
@@ -273,7 +295,7 @@ class MRubisController():
                 self._update_current_state(current_issue)
 
                 # Pick rule, send it to mRUBiS
-                picked_rule = self._pick_rule(current_issue, method=rule_picking_method)
+                picked_rule = self._pick_rule(current_issue, strategy=rule_picking_method)
                 self._send_rule_to_execute(current_issue, picked_rule)
 
                 self.number_of_issues_handled_in_this_run += 1
@@ -308,9 +330,9 @@ class MRubisController():
         if not external_start:
             self._stop_mrubis()
 
-        self._write_state_history_to_disk(filename=f'{max_runs}_runs_{rule_picking_method}_{issue_ranking_strategy}')
+        self._write_state_history_to_disk(filename=f'{max_runs}_runs_{rule_picking_strategy}_{issue_ranking_strategy}')
 
 if __name__ == "__main__":
     
     controller = MRubisController()
-    controller.run(external_start=True, max_runs=100, rule_picking_method='lowest', issue_ranking_strategy='utility')
+    controller.run(external_start=True, max_runs=100, rule_picking_strategy='lowest', issue_ranking_strategy='utility')
