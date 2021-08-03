@@ -286,6 +286,7 @@ class MRubisController():
             if self.mrubis_process.poll() is None:
                 logger.info('MRUBIS is running')
 
+        # Account for Java being slow to start on some systems
         sleep(0.5)
 
         self._connect_to_java()
@@ -328,15 +329,20 @@ class MRubisController():
             logger.info(
                 f'Total number of issues handled: {self.number_of_issues_handled_in_this_run}')
 
+            # Predict the optimal utility of the components to fix...
             self._predict_optimal_utility_of_fixed_components()
             state_df_before = self._state_to_df(fix_status='before')
             self.mrubis_state_history.append(state_df_before)
 
+            # Get and send the order of the fixes to mRUBiS...
             component_fixing_order = self._get_component_fixing_order(
                 state_df_before, ranking_strategy=issue_ranking_strategy)
             logger.info(f'Fixing in this order: {component_fixing_order}')
             self._send_order_in_which_to_apply_fixes(component_fixing_order)
 
+            # Fixes are now being applied...
+
+            # Query the state of the affected components once more
             logger.info(
                 "Getting state of affected components after taking action...")
             state_after_action = self._get_from_mrubis(
