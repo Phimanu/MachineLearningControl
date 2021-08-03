@@ -19,7 +19,7 @@ logger.setLevel(logging.INFO)
 
 class MRubisController():
 
-    def __init__(self, host='localhost', port=8080, json_path='path.json', rule_approach='lowest') -> None:
+    def __init__(self, host='localhost', port=8080, json_path='path.json') -> None:
         '''Create a new instance of the mRubisController class'''
 
         # Put your command line here (In Eclipse: Run -> Run Configurations... -> Show Command Line)
@@ -318,7 +318,7 @@ class MRubisController():
 
                 # Pick rule, send it to mRUBiS
                 picked_rule = self._pick_rule(
-                    current_issue, strategy=rule_picking_method)
+                    current_issue, strategy=rule_picking_strategy)
                 self._send_rule_to_execute(current_issue, picked_rule)
 
                 self.number_of_issues_handled_in_this_run += 1
