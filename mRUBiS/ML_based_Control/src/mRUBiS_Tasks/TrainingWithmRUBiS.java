@@ -45,7 +45,9 @@ import de.mdelab.morisia.comparch.simulator.Capability;
 import de.mdelab.morisia.comparch.simulator.ComparchSimulator;
 import de.mdelab.morisia.comparch.simulator.InjectionStrategy;
 import de.mdelab.morisia.comparch.simulator.impl.testTrace;
+import de.mdelab.morisia.comparch.simulator.impl.Trace_1;
 import de.mdelab.morisia.comparch.simulator.impl.Trace_2;
+import de.mdelab.morisia.comparch.simulator.impl.Trace_Deterministic;
 import de.mdelab.morisia.comparch.simulator.impl.ValidationInjectionStrategy;
 import de.mdelab.morisia.selfhealing.incremental.EventListener;
 import de.mdelab.morisia.selfhealing.incremental.EventQueue;
@@ -77,7 +79,7 @@ public class TrainingWithmRUBiS {
 	public static FileWriter MLfileReP = null;
 	public static FileWriter MLValidation = null;
 	private final static int ROUNDS = 1; // 100; // 25
-	private final static int RUNS = 1; // 1000
+	private final static int RUNS = 100; // 1000
 
 	private final static String SEP = ",";
 	private final static boolean excel = false;
@@ -254,7 +256,7 @@ public class TrainingWithmRUBiS {
 			boolean logToConsole = false;
 			ComparchSimulator simulator = ComparchSimulator.FACTORY.createSimulator(Capability.SELF_REPAIR,
 					architecture, RUNS, Level.CONFIG, logFile, logToConsole);
-					InjectionStrategy strategy = new Trace_2
+					InjectionStrategy strategy = new Trace_Deterministic
 					(simulator.getSupportedIssueTypes(), architecture);
 			simulator.setInjectionStrategy(strategy);
 
@@ -298,25 +300,18 @@ public class TrainingWithmRUBiS {
 					/*
 					 * Analyze
 					 */
-					 System.out.printf("\n -----before Analyze \n");
-					 ArchitectureUtilCal.computeOverallUtility(architecture);
+					 System.out.printf("\n -----U before Analyze   "+ArchitectureUtilCal.computeOverallUtility(architecture)+"\n");
+					// ArchitectureUtilCal.computeOverallUtility(architecture);
 					long start_A = System.nanoTime();
 					analyze(interpreter, annotations, A_CF1, A_CF2, A_CF3, A_CF5);
 					sum_nano_time_A += System.nanoTime() - start_A;
 					
-					for(Issue issue:architecture.getAnnotations().getIssues() )
-					{
-						 System.out.printf("\n Comp  " + issue.getAffectedComponent().getType().getName());
-						 System.out.printf("\n in Shop   " + issue.getAffectedComponent().getTenant().getName());
-						 
-						 
-					}
 					
 					
 					
 					 //System.out.printf("\n Analyze detects "+ annotations.getIssues().size()+" issues");
-					System.out.printf("\n -----After Analyze \n\n");
-					 ArchitectureUtilCal.computeOverallUtility(architecture);
+				
+					// ArchitectureUtilCal.computeOverallUtility(architecture);
 					/*
 					 * Plan
 					 */
@@ -546,7 +541,7 @@ public class TrainingWithmRUBiS {
 					for (Rule r : rulesToBeExecuted) {
 						sum_nano_time_Run += r.getCosts() * 1e9; // sec to ns
 					}
-
+					 System.out.printf("\n -----U After Plan   "+ArchitectureUtilCal.computeOverallUtility(architecture)+"\n");
 					/*
 					 * Execute
 					 */
@@ -589,7 +584,7 @@ public class TrainingWithmRUBiS {
 				if (issueCount > 0) {
 					System.out.println("\n Issue are remaining in the model!!!!! \n");
 				}
-				System.out.printf("\n -----After Execution __________________________-\n\n");
+				System.out.printf("\n -----After Execution __________________________Utility "+ ArchitectureUtilCal.computeOverallUtility(architecture)+"\n\n");
 				/*for (Tenant shop : architecture.getTenants()) {
 					for (Component component : shop.getComponents()) {
 						System.out.printf("\n\n +++ Component "+component.getType().getName());
@@ -606,7 +601,7 @@ public class TrainingWithmRUBiS {
 					
 				}*/
 				
-				 ArchitectureUtilCal.computeOverallUtility(architecture);
+				// ArchitectureUtilCal.computeOverallUtility(architecture);
 			} // next simulation run
 
 			double avg_nano_time_A = sum_nano_time_A / RUNS;  //sum_nano_time_ : is the sum of all runs
@@ -801,7 +796,7 @@ public class TrainingWithmRUBiS {
 	private static void plan(MLSDMInterpreter interpreter, Annotations annotations, Activity P_CF1, Activity P_CF2,
 			Activity P_CF3, Activity P_CF5) throws SDMException {
 		for (Issue issue : annotations.getIssues()) {
-			System.out.print("\n name of the comp." +issue.getAffectedComponent().getType().getName()+"\n");
+			//System.out.print("\n name of the comp." +issue.getAffectedComponent().getType().getName()+"\n");
 			// Get all the applicable Rules
 
 			// System.out.print("\n Next Issue");
@@ -813,7 +808,7 @@ public class TrainingWithmRUBiS {
 				parameters.add(createParameter("annotations", annotations));
 
 				interpreter.executeActivity(P_CF1, parameters);
-				 System.out.print("\n Plan detected CF1");
+				 //System.out.print("\n Plan detected CF1");
 			} else if (issue instanceof CF2) {
 				CF2 cf2 = (CF2) issue;
 
@@ -822,20 +817,20 @@ public class TrainingWithmRUBiS {
 				parameters.add(createParameter("annotations", annotations));
 
 				interpreter.executeActivity(P_CF2, parameters);
-				 System.out.print("\n Plan detected CF2");
+				// System.out.print("\n Plan detected CF2");
 			} else if (issue instanceof CF3) {
 				CF3 cf3 = (CF3) issue;
 
 				Collection<Variable<EClassifier>> parameters = new ArrayList<Variable<EClassifier>>();
 				parameters.add(createParameter("cf3", cf3));
 				parameters.add(createParameter("annotations", annotations));
-				 System.out.print("\n Plan detected CF3");
+				// System.out.print("\n Plan detected CF3");
 
 				interpreter.executeActivity(P_CF3, parameters);
 			} else if (issue instanceof CF4) {
 				// skip for now
 			} else if (issue instanceof CF5) {
-				 System.out.print("\n Plan detected CF5");
+				// System.out.print("\n Plan detected CF5");
 				CF5 cf5 = (CF5) issue;
 				Collection<Variable<EClassifier>> parameters = new ArrayList<Variable<EClassifier>>();
 				parameters.add(createParameter("cf5", cf5));
@@ -853,7 +848,9 @@ public class TrainingWithmRUBiS {
 		 * EXECUTE
 		 */
 		for (int i = 0; i < allIssues.size(); i++) {
+	
 			Issue issue = allIssues.get(i);
+			System.out.print("\n Increasing Utility by   "+issue.getHandledBy().get(0).getUtilityIncrease()+ "   drop was "+ issue.getUtilityDrop());
 			if (issue instanceof CF1) {
 				CF1 cf1 = (CF1) issue;
 				Collection<Variable<EClassifier>> parameters = new ArrayList<Variable<EClassifier>>();
