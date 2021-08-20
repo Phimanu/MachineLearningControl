@@ -57,6 +57,7 @@ import de.mdelab.morisia.comparch.simulator.ComparchSimulator;
 import de.mdelab.morisia.comparch.simulator.InjectionStrategy;
 import de.mdelab.morisia.comparch.simulator.impl.Trace_1;
 import de.mdelab.morisia.comparch.simulator.impl.Trace_2;
+import de.mdelab.morisia.comparch.simulator.impl.Trace_Deterministic;
 import de.mdelab.morisia.comparch.simulator.impl.testTrace;
 import de.mdelab.morisia.selfhealing.incremental.EventListener;
 import de.mdelab.morisia.selfhealing.incremental.EventQueue;
@@ -226,7 +227,7 @@ public class Task_1 {
 		ComparchSimulator simulator = ComparchSimulator.FACTORY.createSimulator(Capability.SELF_REPAIR,
 				architecture, RUNS, Level.CONFIG, logFile, logToConsole);
 		//InjectionStrategy strategy = new testTrace
-		InjectionStrategy strategy = new Trace_2
+		InjectionStrategy strategy = new Trace_Deterministic
 				(simulator.getSupportedIssueTypes(), architecture);
 		simulator.setInjectionStrategy(strategy);
 
