@@ -295,8 +295,6 @@ class MRubisController():
         self.utility_model.load_train_data()
         self.utility_model.train_on_batch_file()
 
-        # TODO: explain design decisions in comments
-
         while self.run_counter < max_runs:
             self.run_counter += 1
             self.components_fixed_in_this_run = {}
