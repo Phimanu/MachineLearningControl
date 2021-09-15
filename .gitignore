@@ -12,3 +12,4 @@ mrubis_controller/output/*
 mRUBiS/ML_based_Control/log.txt
 mRUBiS/ML_based_Control/issueToRulesMap.json
 .DS_Store
+mRUBiS/ML_based_Control/Logs/TrainingmRUBiS.csv
