@@ -50,7 +50,7 @@ class MRubisController():
         self.output_path = Path(__file__).parent.resolve() / 'output'
 
     def _start_mrubis(self):
-        '''Launch mRUBiS as a subprocess'''
+        '''Launch mRUBiS as a subprocess. NOTE: Unstable. Manual startup from Eclipse is more robust.'''
         self.mrubis_process = Popen(
             self.launch_args,
             stdin=PIPE,
@@ -119,6 +119,8 @@ class MRubisController():
             issue)
 
         # ReplaceComponent can only be used on Authentication Service
+        # TODO: Describe why can it only be used on Authentication Service?
+
         if component_name != 'Authentication Service':
             rule_costs = [cost for idx, cost in enumerate(
                 rule_costs) if rules[idx] != 'ReplaceComponent']
