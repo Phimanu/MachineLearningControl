@@ -158,6 +158,7 @@ class MRubisController():
         for shop, fixed_components in self.components_fixed_in_this_run.items():
             for issue_name, component in fixed_components:
                 component_params = self.mrubis_state[shop][component]
+                #TODO: Here :)
                 predicted_utility = self.utility_model.predict_on_mrubis_output(
                     pd.DataFrame(component_params, index=[0])
                 )[0]
