@@ -1,8 +1,27 @@
-import os
 import random
+import pandas as pd
 
 class ComponentDependencyModel:
 
+    def __init__(self, path_to_transition_matrix: str = r'transition_matrix.csv'):
+        self.transition_matrix = self.__load_transition_matrix__(path_to_transition_matrix)
+
+    def __load_transition_matrix__(self, filename):
+        return pd.read_csv(filename)
+
+    def return_failing_probability(self, component_type: str, failing_components: list) -> float:
+        '''
+        Returns for a component to be fixed the probability to fail.
+        :param component_type: The name of the component or its id starting with a underscore.
+        :param failing_components: A list of component types which are currently failing.
+        :return: The probability that the fix will fail.
+        '''
+
+        component = component_type
+
+        # reduce matrix to only the component and its failing components
+        reduced_matrix = self.transition_matrix.loc[(self.transition_matrix[self.transition_matrix.columns[0]] == component)][failing_components]
+        return sum(reduced_matrix.values.tolist()[0])
 
     def get_reward(self, component_failure_pair, list_of_failings) -> float:
         '''
