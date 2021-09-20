@@ -8,6 +8,7 @@ from subprocess import PIPE, Popen
 from time import sleep
 
 from component_utility_predictor import RidgeUtilityPredictor
+from component_dependencies import ComponentDependencyModel
 
 import pandas as pd
 import numpy as np
@@ -48,6 +49,7 @@ class MRubisController():
         self.mrubis_process = None
         self.utility_model = RidgeUtilityPredictor()
         self.output_path = Path(__file__).parent.resolve() / 'output'
+        self.component_dependency_model = ComponentDependencyModel()
 
     def _start_mrubis(self):
         '''Launch mRUBiS as a subprocess. NOTE: Unstable. Manual startup from Eclipse is more robust.'''
@@ -162,6 +164,11 @@ class MRubisController():
                 predicted_utility = self.utility_model.predict_on_mrubis_output(
                     pd.DataFrame(component_params, index=[0])
                 )[0]
+                if(True):
+                    failing_component_types = [values[1] for component_info in self.components_fixed_in_this_run.values() for values in component_info]
+                    type_of_component_to_fix = fixed_components[0][1]
+                    fail_probability = self.component_dependency_model.fix_fail_probability(type_of_component_to_fix, failing_component_types)
+                    predicted_utility = predicted_utility * (1-fail_probability)
                 self.mrubis_state[shop][component]['predicted_optimal_utility'] = predicted_utility
 
     def __get_ranked_fix_instructions(self, state_df_before: pd.DataFrame, ranking_strategy):
@@ -331,7 +338,7 @@ class MRubisController():
                 f'Total number of issues handled: {self.number_of_issues_handled_in_this_run}')
 
             # Predict the optimal utility of the components to fix...
-            self._predict_optimal_utility_of_fixed_components()
+            self._predict_optimal_utility_of_fixed_components() #Side effect: [shop][component]['predicted_optimal_utility']
             state_df_before = self._state_to_df(fix_status='before')
             self.mrubis_state_history.append(state_df_before)
 
