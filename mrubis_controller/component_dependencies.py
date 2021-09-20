@@ -3,10 +3,8 @@ import pandas as pd
 class ComponentDependencyModel:
 
     def __init__(self, path_to_transition_matrix: str = r'transition_matrix.csv'):
-        self.transition_matrix = self.__load_transition_matrix__(path_to_transition_matrix)
+        self.transition_matrix = pd.read_csv(path_to_transition_matrix)
 
-    def __load_transition_matrix__(self, filename):
-        return pd.read_csv(filename)
 
     def fix_fail_probability(self, failing_component_type: str, all_failing_component_types: list) -> float:
         '''
@@ -17,7 +15,6 @@ class ComponentDependencyModel:
         '''
 
         # reduce matrix to only the component and its failing components
-
         tm = self.transition_matrix  # for readability
         fail_probabilities = tm.loc[(tm[tm.columns[0]] == failing_component_type)][all_failing_component_types]
         return sum(fail_probabilities.values.tolist()[0])
