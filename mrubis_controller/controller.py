@@ -155,16 +155,15 @@ class MRubisController():
         self.components_fixed_in_this_run[shop_name].append(
             (issue_name, component_name))
 
-    def _predict_optimal_utility_of_fixed_components(self):
+    def _predict_optimal_utility_of_fixed_components(self, fixes_can_fail):
         '''Predict the optimal utility of a component which should be fixed'''
         for shop, fixed_components in self.components_fixed_in_this_run.items():
             for issue_name, component in fixed_components:
                 component_params = self.mrubis_state[shop][component]
-                #TODO: Here :)
                 predicted_utility = self.utility_model.predict_on_mrubis_output(
                     pd.DataFrame(component_params, index=[0])
                 )[0]
-                if(True):
+                if(fixes_can_fail):
                     failing_component_types = [values[1] for component_info in self.components_fixed_in_this_run.values() for values in component_info]
                     type_of_component_to_fix = fixed_components[0][1]
                     fail_probability = self.component_dependency_model.fix_fail_probability(type_of_component_to_fix, failing_component_types)
@@ -288,7 +287,7 @@ class MRubisController():
                     if 'Authentication Service' in component_type and np.isclose(float(component_params['component_utility']), 0):
                         del self.mrubis_state[shop][component_type]
 
-    def run(self, external_start=False, max_runs=100, rule_picking_strategy='lowest', issue_ranking_strategy='utility'):
+    def run(self, external_start=False, max_runs=100, rule_picking_strategy='lowest', issue_ranking_strategy='utility', fixes_can_fail=False):
         '''Run and control mRUBiS for a maximum number of runs'''
 
         if not external_start:
@@ -338,7 +337,7 @@ class MRubisController():
                 f'Total number of issues handled: {self.number_of_issues_handled_in_this_run}')
 
             # Predict the optimal utility of the components to fix...
-            self._predict_optimal_utility_of_fixed_components() #Side effect: [shop][component]['predicted_optimal_utility']
+            self._predict_optimal_utility_of_fixed_components(fixes_can_fail) #Side effect: [shop][component]['predicted_optimal_utility']
             state_df_before = self._state_to_df(fix_status='before')
             self.mrubis_state_history.append(state_df_before)
 
@@ -373,11 +372,11 @@ class MRubisController():
             self._stop_mrubis()
 
         self._write_state_history_to_disk(
-            filename=f'{max_runs}_runs_{rule_picking_strategy}_{issue_ranking_strategy}')
+            filename=f'{max_runs}_runs_{rule_picking_strategy}_{issue_ranking_strategy}{"_fixingcanfail" if fixes_can_fail else ""}')
 
 
 if __name__ == "__main__":
 
     controller = MRubisController()
     controller.run(external_start=True, max_runs=100,
-                   rule_picking_strategy='lowest', issue_ranking_strategy='utility')
+                   rule_picking_strategy='highest', issue_ranking_strategy='utility', fixes_can_fail=False)
