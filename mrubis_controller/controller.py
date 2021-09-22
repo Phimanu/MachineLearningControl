@@ -163,7 +163,7 @@ class MRubisController():
                 predicted_utility = self.utility_model.predict_on_mrubis_output(
                     pd.DataFrame(component_params, index=[0])
                 )[0]
-                if(fixes_can_fail):
+                if fixes_can_fail:
                     failing_component_types = [values[1] for component_info in self.components_fixed_in_this_run.values() for values in component_info]
                     type_of_component_to_fix = fixed_components[0][1]
                     fail_probability = self.component_dependency_model.fix_fail_probability(type_of_component_to_fix, failing_component_types)
@@ -214,6 +214,11 @@ class MRubisController():
             'issue': fix_tuple[1],
             'component': fix_tuple[2]
         } for idx, fix_tuple in enumerate(order_tuples)}
+        '''
+        for issueComponent in order_dict:
+            self.socket.send(json.dumps(issueComponent))
+            data = self.socket.recv(64000)
+        '''
         self.socket.send((json.dumps(order_dict) + '\n').encode("utf-8"))
         logger.debug(
             "Waiting for mRUBIS to answer with 'fix_order_received'...")
@@ -257,6 +262,8 @@ class MRubisController():
             np.arange(1, len(self.mrubis_state_history)+1), 2)).reset_index()
         history_df.columns = ['run', 'fix_status', 'shop',
                               'component'] + list(history_df.columns)[4:]
+        # TODO: RM non-failing rows, except fixes right after fail.
+        #
         self.output_path.mkdir(exist_ok=True)
         logger.info('Writing run history to disk...')
         history_df.to_csv(self.output_path / f'{filename}.csv', index=False)
@@ -264,6 +271,7 @@ class MRubisController():
 
     def _update_current_state(self, incoming_state):
         '''Update the controller's current mRUBiS state with an incoming state'''
+        '''TODO: This is not a state, but a data update. '''
         for shop, shop_components in incoming_state.items():
             for component_type, component_params in shop_components.items():
                 if shop not in self.mrubis_state.keys():
