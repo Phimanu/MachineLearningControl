@@ -267,7 +267,7 @@ class MRubisController():
             state_df['shop_utility'] = state_df.groupby(
                 level=[1])['shop_utility'].transform('max')
 
-    def _write_state_history_to_disk(self, filename='mrubis'):
+    def _write_mrubis_state_history_to_disk(self, filename='mrubis'):
         '''Write the state history to disk'''
         history_df = pd.concat(self.mrubis_state_history, keys=np.repeat(
             np.arange(1, len(self.mrubis_state_history)+1), 2)).reset_index()
@@ -277,6 +277,12 @@ class MRubisController():
         logger.info('Writing run history to disk...')
         history_df.to_csv(self.output_path / f'{filename}.csv', index=False)
         #history_df.to_excel(self.output_path / f'{filename}.xls', index=False)
+
+    def _write_df_list_to_disk(self, df_list, filename='mHistory'):
+        df = pd.concat(df_list).reset_index(drop=True)
+        self.output_path.mkdir(exist_ok=True)
+        df.to_csv(self.output_path / f'{filename}.csv', index=False)
+
 
     def _update_current_state(self, incoming_state):
         '''Update the controller's current mRUBiS state with an incoming state'''
@@ -394,12 +400,15 @@ class MRubisController():
         if not external_start:
             self._stop_mrubis()
 
-        self._write_state_history_to_disk(
+        self._write_mrubis_state_history_to_disk(
             filename=f'{max_runs}_runs_{rule_picking_strategy}_{issue_ranking_strategy}{"_fixingcanfail" if fixes_can_fail else ""}')
+
+        self._write_df_list_to_disk(self.fix_history,
+            filename=f'cumfix{max_runs}_runs_{rule_picking_strategy}_{issue_ranking_strategy}{"_fixingcanfail" if fixes_can_fail else ""}')
 
 
 if __name__ == "__main__":
 
     controller = MRubisController()
     controller.run(external_start=True, max_runs=100,
-                   rule_picking_strategy='highest', issue_ranking_strategy='utility', fixes_can_fail=False)
+                   rule_picking_strategy='highest', issue_ranking_strategy='random', fixes_can_fail=True)
