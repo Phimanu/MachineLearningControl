@@ -45,6 +45,8 @@ class MRubisController():
         self.current_issue = {}
         self.mrubis_state = {}
         self.mrubis_state_history = []
+        self.fix_history = []
+        self.current_fixes = None
         self.socket = None
         self.mrubis_process = None
         self.utility_model = RidgeUtilityPredictor()
@@ -192,6 +194,9 @@ class MRubisController():
                                              .reorder_levels([0, 2, 1])\
                                              .index\
                                              .tolist()
+        #We save the sorted fixes here, so we can use them for total utility calculations later.
+        self.current_fixes = sorted_rows.reset_index()
+
         return ranked_fix_instructions
 
     def _get_component_fixing_order(self, state_df_before: pd.DataFrame, ranking_strategy: str = 'utility'):
@@ -205,6 +210,12 @@ class MRubisController():
             for i_c_tuple in self.components_fixed_in_this_run[shop]:
                 all_fix_order_tuples.append((shop, i_c_tuple[0], i_c_tuple[1]))
         return all_fix_order_tuples
+
+    def _cumulative_utility_based_on_order(self, sorted_df: pd.DataFrame):
+        n_rows = sorted_df.shape[0]
+        cumulative_utility_per_component = [util * (n_rows - i) for i, util in enumerate(sorted_df['predicted_optimal_utility'])]
+        sorted_df['cum_util'] = cumulative_utility_per_component
+        return sorted_df
 
     def _send_order_in_which_to_apply_fixes(self, order_tuples):
         '''Send the order in which to apply the fixes to mRUBiS'''
@@ -262,8 +273,6 @@ class MRubisController():
             np.arange(1, len(self.mrubis_state_history)+1), 2)).reset_index()
         history_df.columns = ['run', 'fix_status', 'shop',
                               'component'] + list(history_df.columns)[4:]
-        # TODO: RM non-failing rows, except fixes right after fail.
-        #
         self.output_path.mkdir(exist_ok=True)
         logger.info('Writing run history to disk...')
         history_df.to_csv(self.output_path / f'{filename}.csv', index=False)
@@ -317,6 +326,7 @@ class MRubisController():
             self.components_fixed_in_this_run = {}
             self.number_of_issues_handled_in_this_run = 0
             self.number_of_issues_in_run = 1  # make sure that the loop runs at least once
+            #current_issues = []
 
             logger.info(f"Getting state {self.run_counter}/{max_runs}...")
 
@@ -330,6 +340,7 @@ class MRubisController():
 
                 # Get the current issue to handle
                 current_issue = self._get_from_mrubis('get_issue')
+                #current_issues.append(current_issue)
                 self._update_current_state(current_issue)
 
                 # Pick rule, send it to mRUBiS
@@ -352,6 +363,10 @@ class MRubisController():
             # Get and send the order of the fixes to mRUBiS...
             component_fixing_order = self._get_component_fixing_order(
                 state_df_before, ranking_strategy=issue_ranking_strategy)
+
+            fixed_issues = self._cumulative_utility_based_on_order(self.current_fixes)
+            self.fix_history.append(fixed_issues)
+
             logger.info(f'Fixing in this order: {component_fixing_order}')
             self._send_order_in_which_to_apply_fixes(component_fixing_order)
 
