@@ -2,14 +2,18 @@ package de.mdelab.morisia.selfhealing.rules;
 
 import static org.junit.Assert.assertTrue;
 
-import java.io.FileWriter;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.logging.Logger;
+import java.util.HashMap;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.mdelab.morisia.comparch.AddReplica;
 import de.mdelab.morisia.comparch.Architecture;
@@ -32,8 +36,8 @@ public class UtilityIncreasePredictor {
 	private final static Logger LOGGER = Logger.getLogger(UtilityIncreasePredictor.class.getName());
 	static long sum_nano_time_P = 0;
 
-	
-/*
+
+	/*
 	 * OUR APPRAOCH - Calculating Combined Utility Increase
 	 * ===============================================================
 	 */
@@ -50,6 +54,7 @@ public class UtilityIncreasePredictor {
 				+ " rules attached to the issue " + issue);
 		//System.out.print("\n Predicting utility increase for the " + issue.getHandledBy().size()
 			//	+ " rules attached to the issue " );
+		CostPredictor.predictCosts(issue);
 		for (Rule rule : issue.getHandledBy()) {
 			// Each rule increases the utility as much as the issue has
 			// decreased it, except of the ReplaceComponent rule that may
@@ -234,10 +239,37 @@ public class UtilityIncreasePredictor {
 			//System.out.print("\n Predicted utility increase of " + utilityIncrease + " for the rule " + rule);
 			
 		}
+		
+		Path jsonFile = Paths.get("issueToRulesMap.json");
+		String affectedComponent = issue.getAffectedComponent().getType().getName();
+		String issueName = issue.getClass().getSimpleName().replaceAll("Impl", "");
+		String shopName = issue.getAffectedComponent().getTenant().getName();
+		List<Rule> availableRules = issue.getHandledBy();
+		
+		// store rules in the following way: shop -> issue -> component type -> rules, costs 
 
-		List<Rule> listOfRules = issue.getHandledBy();
-		//System.out.print("\n   C issue is handled by  " + issue.getHandledBy().size() + "rule");
-
+		HashMap<String, HashMap<String, HashMap<String, HashMap<String, Double>>>> shopToissueToCompToRulesMap = new HashMap<String, HashMap<String, HashMap<String, HashMap<String, Double>>>>();
+		HashMap<String, HashMap<String, HashMap<String, Double>>> issueToCompToRulesMap = new HashMap<String, HashMap<String, HashMap<String, Double>>>();  
+		HashMap<String, HashMap<String, Double>> compToRulesMap = new HashMap<String, HashMap<String, Double>>();
+		HashMap<String, Double> ruleToCostsMap = new HashMap<String, Double>();
+		
+		for ( Rule rule : availableRules) {
+			String ruleName = rule.getClass().getSimpleName().replaceAll("Impl", "");
+			ruleToCostsMap.put(ruleName, rule.getCosts());
+		}
+		
+		compToRulesMap.put(affectedComponent, ruleToCostsMap);
+		issueToCompToRulesMap.put(issueName, compToRulesMap);
+		shopToissueToCompToRulesMap.put(shopName, issueToCompToRulesMap);
+		
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			mapper.writeValue(jsonFile.toFile(), shopToissueToCompToRulesMap);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	
