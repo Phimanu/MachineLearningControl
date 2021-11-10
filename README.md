@@ -33,7 +33,17 @@ The dynamica system is a software platform of multi-tenant e-commerce shops
 Due to the nature of Eclipse's dependency handling, we have to supply all dependencies via a terminal command. We also need to know the path to the java version which should run MRUBIS. These paths should be supplied in the `path.json` file in the `py` directory. You can get the required paths from Eclipse by going to `Run -> Run Configurations... -> Show Command Line`.
 
 ## Smoke Test!
-Run the following class as a Java Application
+Two steps
+1- Run the Main System (mRubis)   
+Execute the following class as a Java Application
 - Project: Predict_SelfHealing_Utility
 - Package: mRubis_Tasks
 - Class: Task_1
+
+2- Run the the controller
+Execute following Python Application in a second command line session:
+- Project: Predict_SelfHealing_Utility
+- Folder: mrubis_controller/ 
+- File: controller.py 
+
+Expected output: A set of messages showing Failures being Fixed by Actions chosen by the Controller.
