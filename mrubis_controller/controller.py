@@ -6,13 +6,14 @@ from pathlib import Path
 from json.decoder import JSONDecodeError
 from subprocess import PIPE, Popen
 from time import sleep
+import sys
 
 from component_utility_predictor import RidgeUtilityPredictor
 from component_dependencies import ComponentDependencyModel
 
 import pandas as pd
-from mrubis_controller.failure_propagator.fairlure_propagator import FailureProgagator
-from mrubis_controller.failure_propagator.messages import Messages
+from failure_propagator.fairlure_propagator import FailureProgagator
+from failure_propagator.messages import Messages
 import numpy as np
 
 logging.basicConfig()
@@ -76,7 +77,7 @@ class MRubisController():
         self.number_of_shops = self.environment.get_number_of_shops()
         logger.info(f'Number of mRUBIS shops: {self.number_of_shops}')
         for _ in range(self.number_of_shops):
-            shop_state = self.environment.get_from_mrubis(Messages.GET_INITIAL_STATE)
+            shop_state = self.environment.get_initial_state()
             shop_name = next(iter(shop_state))
             self.mrubis_state[shop_name] = shop_state[shop_name]
 
@@ -303,6 +304,8 @@ class MRubisController():
 
                 # Get the current issue to handle
                 current_issue = self.environment.get_from_mrubis(Messages.GET_CURRENT_ISSUE)
+                logger.info(current_issue)
+                sys.exit()
                 #current_issues.append(current_issue)
                 self._update_current_state(current_issue)
 

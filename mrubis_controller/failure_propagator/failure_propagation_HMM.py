@@ -1,18 +1,20 @@
 import pandas as pd
 import numpy as np
+from typing import Dict
 
-from mrubis_controller.failure_propagator.component_failure import ComponentFailure
-from mrubis_controller.failure_propagator.components import Components
+from .component_failure import ComponentFailure
+from .components import Components
 
 class FPHMM():
-    def __init__(self, config_path: str):
-        self.transition_matrix = pd.read_csv(config_path)
+    def __init__(self, config_path: str ="moin"):
+        #self.transition_matrix = pd.read_csv(config_path)
         self.current_state = None
 
     def get_state(self):
         return self.current_state
         
     def update_state(self, state):
+        print(state)
         pass
 
     def create_observation(matrix: pd.DataFrame, failed_components: Dict[str, str]):

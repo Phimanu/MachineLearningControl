@@ -7,12 +7,11 @@ from json.decoder import JSONDecodeError
 from subprocess import PIPE, Popen
 from time import sleep
 
-from component_utility_predictor import RidgeUtilityPredictor
-from component_dependencies import ComponentDependencyModel
-
 import pandas as pd
-from mrubis_controller.failure_propagator.messages import Messages
+from .messages import Messages
 import numpy as np
+
+from .failure_propagation_HMM import FPHMM
 
 logging.basicConfig()
 logger = logging.getLogger('controller')
@@ -48,9 +47,8 @@ class FailureProgagator():
         self.current_fixes = None
         self.socket = None
         self.mrubis_process = None
-        self.utility_model = RidgeUtilityPredictor()
         self.output_path = Path(__file__).parent.resolve() / 'output'
-        self.component_dependency_model = ComponentDependencyModel()
+        self.propagator = FPHMM()
 
     def connect_to_java(self):
         '''Connect to the socket opened on the java side'''
@@ -60,6 +58,9 @@ class FailureProgagator():
         logger.info('Connected to the Java side.')
 
     def get_from_mrubis(self, message):
+        if isinstance(message, Messages):
+            message = message.value
+
         '''Send a message to mRUBiS and return the response as a dictionary'''
         self.socket.send(f"{message}\n".encode("utf-8"))
         logger.debug(f'Waiting for mRUBIS to answer to message {message}')
@@ -79,6 +80,8 @@ class FailureProgagator():
 
     def get_initial_state(self):
         shop_state = self.get_from_mrubis(Messages.GET_INITIAL_STATE)
+        return shop_state
+        #self.propagator.update_state(shop_state)
 
     def send_rule_to_execute(self, shop_name, issue_name, component_name, rule):
         '''Send a rule to apply to an issue to mRUBiS'''
